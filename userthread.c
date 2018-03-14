@@ -135,7 +135,7 @@ static void scheduler(int policy, int insertHead)
         gettimeofday(&t, NULL);
         curtime = t.tv_sec * 1000000 + t.tv_usec - begintime.tv_sec * 1000000 - begintime.tv_usec;
         fprintf(stream, "[%f]\t%s\t%d\t%d\n", curtime, "SCHEDULED", firstt->td->tid, UNKNOWN);
-        swapcontext(&curcontext, &(firstt->td->uc));
+        swapcontext(&curcontext, firstt->td->uc);
       }
       return;
     }
@@ -157,7 +157,7 @@ static void scheduler(int policy, int insertHead)
         gettimeofday(&t, NULL);
         curtime = t.tv_sec * 1000000 + t.tv_usec - begintime.tv_sec * 1000000 - begintime.tv_usec;
         fprintf(stream, "[%f]\t%s\t%d\t%d\n", curtime, "SCHEDULED", newhead->td->tid, UNKNOWN);
-	swapcontext(&(oldhead->td->uc), &(newhead->td->uc));
+	swapcontext(oldhead->td->uc, newhead->td->uc);
       } 
       return;   
     }
@@ -273,15 +273,15 @@ int thread_create(void (*func)(void *), void *arg, int priority)
 {
   if (plcy == FIFO)
   {
-    ucontext_t uc;
-    getcontext(&uc);
+    ucontext_t* uc = malloc(sizeof(ucontext_t));
+    getcontext(uc);
     void *stack = (void*)malloc(STACKSIZE);
-    uc.uc_stack.ss_sp = stack;
-    uc.uc_stack.ss_size = STACKSIZE;
-    uc.uc_link = NULL;
-    uc.uc_stack.ss_flags = SS_DISABLE;
-    sigemptyset(&uc.uc_sigmask);
-    makecontext(&uc, (void (*)(void))stubfunc, 2, func, arg);
+    uc->uc_stack.ss_sp = stack;
+    uc->uc_stack.ss_size = STACKSIZE;
+    uc->uc_link = NULL;
+    uc->uc_stack.ss_flags = SS_DISABLE;
+    sigemptyset(&(uc->uc_sigmask));
+    makecontext(uc, (void (*)(void))stubfunc, 2, func, arg);
 
     thrd *td = new_thread(tidcount, uc);
     tidcount++;
@@ -292,7 +292,7 @@ int thread_create(void (*func)(void *), void *arg, int priority)
     // put on queue
 
     insert_tail(fqueue, tn);
-    printf("in created the tid of the head is %d\n", sizeof(get_head(fqueue)->td->uc.uc_stack.ss_sp));
+    printf("in created the tid of the head is %d\n", sizeof(get_head(fqueue)->td->uc->uc_stack.ss_sp));
     double curtime = begintime.tv_sec * 1000000 + begintime.tv_usec;
     fprintf(stream, "[%f]\t%s\t%d\t%d\n", curtime, "CREATED", td->tid, UNKNOWN);
     return tn->td->tid;
