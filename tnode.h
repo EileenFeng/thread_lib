@@ -3,6 +3,8 @@
 #include <ucontext.h>
 
 #define RECORD_NUM 3
+#define ARRSIZE 1024
+#define NOTSET -2
 
 typedef struct thrd {
   int tid;
@@ -14,7 +16,10 @@ typedef struct thrd {
   double last_thr_run[RECORD_NUM]; // the last three run times
   ucontext_t uc;
 
-  int wait_tid; // the tid of the thread that this thread joined
+  // needs to change to all threads waiting for me
+  int* wait_tids;
+  int wait_size;
+  int wait_index;
 } thrd;
 
 typedef struct tnode {

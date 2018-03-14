@@ -9,6 +9,7 @@ typedef struct pqueue_record{
 } pqueue_record;
 
 static pqueue new_q() {
+  printf("here\n");
   pqueue pq = (pqueue_record*)malloc(sizeof(pqueue_record));
   if(pq == NULL) {
     return NULL;
@@ -94,6 +95,7 @@ static void free_list(pqueue pq) {
       nex = nex->next;
     }
     free_tnode(cur);
+    printf("free hear\n");
     free(pq);
     return;
   } else {
@@ -126,15 +128,32 @@ static void pophead(pqueue pq) {
 
 static void deletehead(pqueue pq) {
   if(pq->size != 0) {
+    printf("in here\n");
+    tnode* oldhead = pq->head;    
     tnode* curnext = pq->head->next;
-    tnode* oldhead = pq->head;
+    free_tnode(oldhead);
     pq->head = curnext;
     pq->size --;
-    free_node(oldhead);
+    printf("inside deletehead %d\n", pq->size);
   }
 }
 
-pqueue (*new_queue) () = &new_q;
+static tnode* findtid(pqueue pq, int tid) {
+  if(pq->size == 0) {
+    return NULL;
+  }
+  tnode* thead = pq->head;
+  while(thead != NULL) {
+    if(thead->td->tid == tid) {
+      return thead;
+    }
+    thead = thead->next;
+  }
+  return thead;
+}
+
+
+pqueue (*new_queue)() = &new_q;
 tnode* (*get_head) (pqueue) = &getHead;
 int (*get_size) (pqueue) = &getsize;
 void (*insert) (pqueue, tnode*) = &insert_node;
@@ -144,7 +163,7 @@ void (*free_queue) (pqueue) = &free_list;
 void (*insert_after) (pqueue, tnode*, tnode*) = &insertafter;
 void (*pop_head) (pqueue) = &pophead;
 void (*delete_head) (pqueue) = &deletehead;
-
+tnode* (*find_tid) (pqueue, int) = &findtid;
 /*
 void hello() {
   printf("haha1 \n");

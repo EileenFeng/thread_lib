@@ -6,11 +6,13 @@ typedef struct pqueue_record* pqueue;
 
 pqueue (*new_queue) ();
 
-tnode* (*get_head) (pqueue);
-
 int (*get_size) (pqueue);
 
-void (*insert) (pqueue, tnode*);
+tnode* (*get_head) (pqueue);
+
+void (*insert) (pqueue, tnode*); // insertion based on priority
+
+tnode* (*find_tid) (pqueue, int);
 
 void (*insert_tail) (pqueue, tnode*); 
 

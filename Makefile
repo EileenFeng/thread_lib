@@ -1,19 +1,14 @@
 CC = gcc
-FLAGS = -Wall -g 
+FLAGS = -Wall -fpic -g
 
-all: threadlib
+test: test1.c libuserthread.so
+	$(CC) -o test test1.c -L. -luserthread
 
-threadlib : userthread.o pqueue.o tnode.o
-	$(CC) -o threadlib userthread.o pqueue.o tnode.o
+libuserthread.so : userthread.o pqueue.o tnode.o
+	$(CC) -o libuserthread.so userthread.o pqueue.o tnode.o -shared
 
-threadlib.o: userthread.c userthread.h  
-	$(CC) -c $(FLAGS) userthread.c 
-
-pqueue.o: pqueue.c pqueue.h
-	$(CC) -c $(FLAGS) pqueue.c
-
-tnode.o: tnode.c tnode.h
-	$(CC) -c $(FLAGS) tnode.c 
+userthread.o: userthread.c userthread.h pqueue.c pqueue.h tnode.c tnode.h
+	$(CC) $(FLAGS) -c userthread.c pqueue.c tnode.c
 
 clean:
-	rm *.o threadlib
+	rm *.o libuserthread.so

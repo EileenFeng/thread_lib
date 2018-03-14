@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <string.h>
 #include <unistd.h>
 #include "tnode.h"
+
 
 thrd* new_thrd(int tid, ucontext_t uc) {
   thrd* td = (thrd*)malloc(sizeof(thrd));
@@ -12,7 +14,11 @@ thrd* new_thrd(int tid, ucontext_t uc) {
   }
   td->uc = uc;
   td->tid = tid;
+  td->last_run = NOTSET;
   td->index = 0;
+  td->wait_tids = malloc(sizeof(int) * ARRSIZE);
+  td->wait_index = NOTSET;
+  td->wait_size = ARRSIZE;
   return td;
 }
 
@@ -30,9 +36,12 @@ static tnode* new_node(thrd* td, tnode* next) {
 static void free_node(tnode* tn) {
   if(tn == NULL) {
     return;
-  } else if (tn->td->uc.uc_stack.ss_sp != NULL) {
-    free(tn->td->uc.uc_stack.ss_sp); // free the stack  
   }
+  printf("free in freenode\n");
+  if (tn->td->uc.uc_stack.ss_sp != NULL) {
+    // free(tn->td->uc.uc_stack.ss_sp); // free the stack
+  }
+  free(tn->td->wait_tids);
   free(tn->td);
   free(tn);
 }
