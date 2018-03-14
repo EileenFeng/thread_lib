@@ -9,6 +9,7 @@ typedef struct thrd {
   int state; // scheduled or stopped
   int schedule; // scheduling algorithm
   int priority;
+  int index; // writing index to the last_thr_run array
   double last_run; // the time interval of the last run
   double last_thr_run[RECORD_NUM]; // the last three run times
   ucontext_t uc;
@@ -20,12 +21,6 @@ typedef struct tnode {
   thrd* td; // needs to malloc
   struct tnode* next;
 } tnode;
-
-//static thrd* new_thrd(int tid, ucontext_t);
-
-//static tnode* new_node(thrd*, tnode*);
-
-//static void free_node(tnode*);
 
 thrd* (*new_thread) (int, ucontext_t);
 

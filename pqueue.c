@@ -109,6 +109,31 @@ static tnode* getHead(pqueue pq) {
   return pq->head;
 }
 
+static void insertafter (pqueue pq, tnode* target, tnode* after) {
+  tnode* curnext = target->next;
+  target->next = after;
+  after->next = curnext;
+  pq->size ++;
+}
+
+static void pophead(pqueue pq) {
+  if(pq->size != 0) {
+    tnode* curnext = pq->head->next;
+    pq->head = curnext;
+    pq->size --;
+  }
+}
+
+static void deletehead(pqueue pq) {
+  if(pq->size != 0) {
+    tnode* curnext = pq->head->next;
+    tnode* oldhead = pq->head;
+    pq->head = curnext;
+    pq->size --;
+    free_node(oldhead);
+  }
+}
+
 pqueue (*new_queue) () = &new_q;
 tnode* (*get_head) (pqueue) = &getHead;
 int (*get_size) (pqueue) = &getsize;
@@ -116,7 +141,9 @@ void (*insert) (pqueue, tnode*) = &insert_node;
 void (*insert_tail) (pqueue, tnode*) = &add_tail;
 void (*remove_node) (pqueue, int) = &remove_n;
 void (*free_queue) (pqueue) = &free_list;
-
+void (*insert_after) (pqueue, tnode*, tnode*) = &insertafter;
+void (*pop_head) (pqueue) = &pophead;
+void (*delete_head) (pqueue) = &deletehead;
 
 /*
 void hello() {

@@ -12,6 +12,7 @@ thrd* new_thrd(int tid, ucontext_t uc) {
   }
   td->uc = uc;
   td->tid = tid;
+  td->index = 0;
   return td;
 }
 
