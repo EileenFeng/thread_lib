@@ -36,10 +36,12 @@ static void free_node(tnode* tn) {
   if(tn == NULL) {
     return;
   }
+
   if (tn->td->uc.uc_stack.ss_sp != NULL) {
     free(tn->td->uc.uc_stack.ss_sp); // free the stack
   }
   free(tn->td->wait_tids);
+  free(tn->td->uc);
   free(tn->td);
   free(tn);
 }

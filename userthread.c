@@ -128,7 +128,7 @@ static void scheduler(int policy, int insertHead)
         gettimeofday(&t, NULL);
         curtime = t.tv_sec * 1000000 + t.tv_usec - begintime.tv_sec * 1000000 - begintime.tv_usec;
         fprintf(stream, "[%f]\t%s\t%d\t%d\n", curtime, "SCHEDULED", firstt->td->tid, UNKNOWN);
-        swapcontext(&curcontext, &(firstt->td->uc));
+        swapcontext(&curcontext, firstt->td->uc);
       }
       return;
     }

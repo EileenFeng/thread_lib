@@ -14,7 +14,7 @@ typedef struct thrd {
   int index; // writing index to the last_thr_run array
   double last_run; // the time interval of the last run
   double last_thr_run[RECORD_NUM]; // the last three run times
-  ucontext_t uc;
+  ucontext_t* uc;
 
   // needs to change to all threads waiting for me
   int* wait_tids;
