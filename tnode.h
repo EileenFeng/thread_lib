@@ -27,7 +27,7 @@ typedef struct tnode {
   struct tnode* next;
 } tnode;
 
-thrd* (*new_thread) (int, ucontext_t);
+thrd* (*new_thread) (int);
 
 tnode* (*new_tnode) (thrd*, tnode*);
 

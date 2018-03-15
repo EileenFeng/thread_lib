@@ -26,4 +26,6 @@ void (*remove_node) (pqueue, int);
 
 void (*free_queue) (pqueue);
 
+void (*move_head) (pqueue, pqueue);
+
 #endif

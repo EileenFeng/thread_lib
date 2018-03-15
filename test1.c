@@ -1,18 +1,27 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "userthread.h"
 
 
 void hello(int val) {
-  printf("hahahhaha--==--==--== %d hello\n", val);
+  for(int i = 0; i < 5; i++) {
+    //    printf("------- %d %d ------\n", i, val);
+    sleep(1);
+  }
 }
 
+void hello2(char* input) {
+  printf("wata --==---== %s\n", input);
+}
 
 int main() {
-  printf("initialize\n");
   thread_libinit(FIFO);
-  printf("finish initializing\n");
   int tid = thread_create(hello, 10, -1);
+  int tid2 = thread_create(hello2, "nihao", -1);
   thread_join(tid);
+  thread_yield();
+  
+
   thread_libterminate();
 }

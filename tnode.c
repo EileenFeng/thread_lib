@@ -7,12 +7,11 @@
 #include "tnode.h"
 
 
-thrd* new_thrd(int tid, ucontext_t uc) {
+thrd* new_thrd(int tid) {
   thrd* td = (thrd*)malloc(sizeof(thrd));
   if(td == NULL) {
     return NULL;
   }
-  td->uc = uc;
   td->tid = tid;
   td->last_run = NOTSET;
   td->index = 0;
@@ -37,16 +36,15 @@ static void free_node(tnode* tn) {
   if(tn == NULL) {
     return;
   }
-  printf("free in freenode\n");
   if (tn->td->uc.uc_stack.ss_sp != NULL) {
-    // free(tn->td->uc.uc_stack.ss_sp); // free the stack
+    free(tn->td->uc.uc_stack.ss_sp); // free the stack
   }
   free(tn->td->wait_tids);
   free(tn->td);
   free(tn);
 }
 
-thrd* (*new_thread) (int, ucontext_t) = &new_thrd;
+thrd* (*new_thread) (int) = &new_thrd;
 tnode* (*new_tnode) (thrd*, tnode*) = &new_node;
 void (*free_tnode) (tnode*) = &free_node;
 

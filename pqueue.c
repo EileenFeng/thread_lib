@@ -9,7 +9,6 @@ typedef struct pqueue_record{
 } pqueue_record;
 
 static pqueue new_q() {
-  printf("here\n");
   pqueue pq = (pqueue_record*)malloc(sizeof(pqueue_record));
   if(pq == NULL) {
     return NULL;
@@ -95,7 +94,6 @@ static void free_list(pqueue pq) {
       nex = nex->next;
     }
     free_tnode(cur);
-    printf("free hear\n");
     free(pq);
     return;
   } else {
@@ -138,6 +136,14 @@ static void deletehead(pqueue pq) {
   }
 }
 
+static void movehead_finished(pqueue pq, pqueue fin) {
+  tnode* head = pq->head;
+  tnode* newhead = head->next;
+  pq->size --;
+  pq->head = newhead;
+  insert_tail(fin, head);
+}
+
 static tnode* findtid(pqueue pq, int tid) {
   if(pq->size == 0) {
     return NULL;
@@ -164,6 +170,8 @@ void (*insert_after) (pqueue, tnode*, tnode*) = &insertafter;
 void (*pop_head) (pqueue) = &pophead;
 void (*delete_head) (pqueue) = &deletehead;
 tnode* (*find_tid) (pqueue, int) = &findtid;
+void (*move_head) (pqueue, pqueue) = &movehead_finished;
+
 /*
 void hello() {
   printf("haha1 \n");
