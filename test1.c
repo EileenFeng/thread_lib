@@ -6,8 +6,8 @@
 
 void hello(int val) {
   for(int i = 0; i < 5; i++) {
-    //    printf("------- %d %d ------\n", i, val);
-    sleep(1);
+    printf("------- %d %d ------\n", i, val);
+    //sleep(1);
   }
 }
 
@@ -20,7 +20,7 @@ int main() {
   int tid = thread_create(hello, 10, -1);
   int tid2 = thread_create(hello2, "nihao", -1);
   thread_join(tid);
-  thread_yield();
+  //  thread_yield();
   
 
   thread_libterminate();

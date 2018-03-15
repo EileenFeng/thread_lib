@@ -41,7 +41,6 @@ static void free_node(tnode* tn) {
     free(tn->td->uc.uc_stack.ss_sp); // free the stack
   }
   free(tn->td->wait_tids);
-  free(tn->td->uc);
   free(tn->td);
   free(tn);
 }

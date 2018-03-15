@@ -54,7 +54,9 @@ static int tidcount = 2; //counting the number of threads
 static int logfd;        // the file descriptor of the log file
 static FILE* stream = NULL;
 static int firstthread = TRUE;
+static ucontext_t maincontext;
 static ucontext_t curcontext;
+
 //static tnode *mnode;
 static pqueue susq = NULL; //suspended threads b/c joining threads
 static pqueue finished = NULL; // finished nodes
@@ -63,7 +65,7 @@ static pqueue finished = NULL; // finished nodes
 //static pqueue curq = NULL; // keep track of the current queue (for fifo and sjf)
 
 /************************ function prototypes *****************************/
-static void scheduler(int policy, int insertHead);
+static void scheduler(int policy);
 static void stubfunc(void (*func)(void *), void *arg);
 
 static void stubfunc(void (*func)(void *), void *arg)
@@ -102,11 +104,13 @@ static void stubfunc(void (*func)(void *), void *arg)
     curhead->td->last_thr_run[index] = curhead->td->last_run;
     curhead->td->index = (index + 1) % RECORD_NUM;
   }
-  scheduler(plcy, FALSE);
+  
+  scheduler(plcy);
 }
 
-static void scheduler(int policy, int insertHead)
+static void scheduler(int policy)
 {
+  //setcontext(&maincontext);   
   struct timeval t;
   double curtime;
   if (policy == FIFO)
@@ -115,6 +119,7 @@ static void scheduler(int policy, int insertHead)
     if (get_size(fqueue) == 0)
     {
       printf("fifo queue is emtpy\n");
+      setcontext(&maincontext);
       return;
     }
 
@@ -128,7 +133,9 @@ static void scheduler(int policy, int insertHead)
         gettimeofday(&t, NULL);
         curtime = t.tv_sec * 1000000 + t.tv_usec - begintime.tv_sec * 1000000 - begintime.tv_usec;
         fprintf(stream, "[%f]\t%s\t%d\t%d\n", curtime, "SCHEDULED", firstt->td->tid, UNKNOWN);
-        swapcontext(&curcontext, firstt->td->uc);
+	curcontext = firstt->td->uc;
+	swapcontext(&maincontext, &curcontext);
+	//setcontext(&curcontext);
       }
       return;
     }
@@ -141,9 +148,9 @@ static void scheduler(int policy, int insertHead)
     {
       printf("head not finished need to insert\n");
       pop_head(fqueue);
-      if(insertHead) {
+      //if(insertHead) {
         insert_tail(fqueue, oldhead);
-      }
+	// }
       newhead = get_head(fqueue);
       if(newhead != NULL) {
         newhead->td->state = SCHEDULED;
@@ -152,7 +159,7 @@ static void scheduler(int policy, int insertHead)
         fprintf(stream, "[%f]\t%s\t%d\t%d\n", curtime, "SCHEDULED", newhead->td->tid, UNKNOWN);
 	swapcontext(&(oldhead->td->uc), &(newhead->td->uc));
       } else {
-	setcontext(&curcontext);
+	setcontext(&maincontext);
       }
       return;   
     }
@@ -167,7 +174,7 @@ static void scheduler(int policy, int insertHead)
         fprintf(stream, "[%f]\t%s\t%d\t%d\n", curtime, "SCHEDULED", newhead->td->tid, UNKNOWN);
         setcontext(&(newhead->td->uc));
       } else {
-	setcontext(&curcontext);
+	setcontext(&maincontext);
       }
       return;
     }
@@ -191,12 +198,13 @@ int thread_libinit(int policy)
   init = TRUE;
   gettimeofday(&begintime, NULL);
   void *stack = malloc(STACKSIZE);
-  curcontext.uc_stack.ss_sp = stack;
-  curcontext.uc_stack.ss_size = STACKSIZE;
-  curcontext.uc_link = NULL;
-  curcontext.uc_stack.ss_flags = SS_DISABLE;
-  sigemptyset(&curcontext.uc_sigmask);
-  getcontext(&curcontext);
+  maincontext.uc_stack.ss_sp = stack;
+  maincontext.uc_stack.ss_size = STACKSIZE;
+  maincontext.uc_link = NULL;
+  maincontext.uc_stack.ss_flags = SS_DISABLE;
+  sigemptyset(&maincontext.uc_sigmask);
+  getcontext(&maincontext);
+  //  makecontext(&maincontext, scheduler, 1, plcy);
   if ((logfd = open("log.txt", O_CREAT | O_TRUNC | O_WRONLY, 0666)) == FAIL)
   {
     perror("open log failed:");
@@ -252,7 +260,7 @@ int thread_libterminate(void)
   }
   free_queue(susq);
   free_queue(finished);
-  free(curcontext.uc_stack.ss_sp);
+  free(maincontext.uc_stack.ss_sp);
   
   if(fclose(stream) == EOF) { perror("close stream: "); return FAIL;}     
   return SUCCESS;
@@ -303,7 +311,7 @@ int thread_join(int tid)
   {
     if (firstthread == TRUE)
     {
-      scheduler(plcy, FALSE);
+      scheduler(plcy);
       return SUCCESS;
     }
 
@@ -335,7 +343,7 @@ int thread_join(int tid)
       gettimeofday(&t, NULL);
       curtime = t.tv_sec * 1000000 + t.tv_usec - begintime.tv_sec * 1000000 - begintime.tv_usec;
       fprintf(stream, "[%f]\t%s\t%d\t%d\n", curtime, "STOPPED", thead->td->tid, UNKNOWN);
-      scheduler(FIFO, FALSE);
+      scheduler(FIFO);
       return SUCCESS;
     }
 
@@ -366,7 +374,7 @@ int thread_yield(void) {
     if(torun != NULL) {
       
     } else {
-      setcontext(&curcontext);
+      setcontext(&maincontext);
     }
     
     
