@@ -1,12 +1,3 @@
-/* updates:
-   1. need to keep track of the main running threads, which will be suspended when
-   joining the first thread in FIFO and SJF
-   2. maintains an array of tids that has joined this thread 
-   3. maintains a suspended queue of suspended threads because of joining (checked)
-   4. update the stub function for this joining feature 
-   (put tnodes with the corresponding tids from the susq to the ready queue) (checked)
-*/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -259,6 +250,12 @@ int thread_libinit(int policy)
     fifo_queue = new_queue();
     if(fifo_queue == NULL) {
       printf("Creating fifo queue failed\n");
+      return FAIL;
+    }
+  } else if (policy == SJF) {
+    sjf_queue = new_queue();
+    if(sjf_queue == NULL) {
+      printf("Creating sjf queue failed\n");
       return FAIL;
     }
   }
