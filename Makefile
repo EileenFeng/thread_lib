@@ -1,7 +1,10 @@
 CC = gcc
 FLAGS = -Wall -fpic -g
 
-all: test1 test2
+all: test1 test2 ktjoin
+
+ktjoin: test_join_chain.c libuserthread.so
+	$(CC) -o ktjoin test_join_chain.c -L. -luserthread
 
 test1: test1.c libuserthread.so
 	$(CC) -o test1 test1.c -L. -luserthread
@@ -16,4 +19,4 @@ userthread.o: userthread.c userthread.h pqueue.c pqueue.h tnode.c tnode.h
 	$(CC) $(FLAGS) -c userthread.c pqueue.c tnode.c
 
 clean:
-	rm *.o libuserthread.so test1 test2
+	rm *.o libuserthread.so test1 test2 ktjoin

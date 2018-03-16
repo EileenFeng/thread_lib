@@ -44,6 +44,9 @@ static int lib_init = FALSE;
 static int schedule_policy = -1;    // policy of current scheduling
 static int tidcount = 2; //counting the number of threads
 static int firstthread = TRUE;
+static double total_runtime = 0;
+static int total_thrdnum = 0;
+
 
 static int logfd;        // the file descriptor of the log file
 static FILE* stream = NULL;
@@ -84,8 +87,16 @@ static void stubfunc(void (*func)(void *), void *arg) {
   func(arg);
   gettimeofday(&end, NULL);   
   double runtime = calculate_time(end, begin);
+  // update total run time
+  total_thrdnum ++;
+  total_runtime += runtime;
+  // update current thread's run time
+  gettimeofday(head->td->start, NULL);
   head->td->last_run = runtime;
   head->td->state = FINISHED;
+  int temp = head->td->index;
+  head->td->last_thr_run[temp] = runtime;
+  head->td->index = (temp + 1) % RECORD_NUM;
   //make context for schedule context -> yes need to update insert_sus and arguments passed in
   makecontext(schedule, scheduler, 2, schedule_policy, FALSE);
   swapcontext(head->td->uc, schedule);
@@ -94,13 +105,18 @@ static void stubfunc(void (*func)(void *), void *arg) {
 
 static void scheduler(int policy, int insert_sus) {
   struct timeval t;
-
+  pqueue target_queue;
+  if(policy == FIFO) {
+    target_queue = fifo_queue;
+  } else if (policy == SJF) {
+    target_queue = sjf_queue;
+  }
   // when head initially is NULL
   if(head == NULL) {
     if(firstthread == TRUE) {
 
-      if(schedule_policy == FIFO) {
-	head = get_head(fifo_queue);
+      if(schedule_policy == FIFO || schedule_policy == SJF) {
+	head = get_head(target_queue);
 	if(head->td->state == CREATED) {
 	  head->td->state = SCHEDULED;
 	  gettimeofday(&t, NULL);
@@ -111,6 +127,8 @@ static void scheduler(int policy, int insert_sus) {
 	    head->td->wait_index = 0;
 	  }
 	  head->td->wait_tids[head->td->wait_index] = MAINTID;
+	  gettimeofday(head->td->start, NULL);
+	  printf("Scheduler starts with %d\n", head->td->tid);
 	  swapcontext(schedule, head->td->uc);
 	} else {
 	  printf("In scheduler first threads in queue is running or stopped or terminated\n");
@@ -140,19 +158,25 @@ static void scheduler(int policy, int insert_sus) {
 	if(temp_index >= 0) {
 	  for(int i = 0; i <= temp_index; i++) {
 	    /* if(head->td->wait_tids[i] == MAINTID) {
-	      insert_tail(fifo_queue, mainnode);
-	      printf("added mainnode to fifo_queue\n");
-	      } else {*/
+	       insert_tail(fifo_queue, mainnode);
+	       printf("added mainnode to fifo_queue\n");
+	       } else {*/
 	    
-	    tnode* find = find_tid(sus_queue, head->td->wait_tids[i]);
-	    if(find != NULL) {
+	    tnode* findnode = find_tid(sus_queue, head->td->wait_tids[i]);
+	    if(findnode != NULL) {
+	      thrd* newthread = copy_thread(findnode->td);
+	      tnode* find = new_tnode(newthread, NULL);
 	      printf("inserting back to READDDDDDY queue %d\n", find->td->tid);
-	      insert_tail(fifo_queue, find);
+	      if(policy == FIFO) {
+		insert_tail(fifo_queue, find);
+	      } else if(policy == SJF) {
+		insert(sjf_queue, find);
+	      }
 	    } else {
 	      printf("scheduelr not found in suspended queue error\n");
 	    }
 
-	      // }
+	    // }
 	  }
 	}
 	
@@ -162,16 +186,41 @@ static void scheduler(int policy, int insert_sus) {
 	double curtime = calculate_time(t, begintime);
 	logfile(curtime, "STOPPED", head->td->tid, head->td->priority);
 
+	// update the current thread's run time
+	double runtime = calculate_time(t, *(head->td->start));
+	gettimeofday(head->td->start, NULL);
+	int temp = head->td->index;
+	head->td->last_thr_run[temp] = runtime;
+	head->td->index = (temp+1) % RECORD_NUM;
+	int recordtimes = 0;
+	double timesum = 0;
+	for(int i = 0; i < RECORD_NUM; i++) {
+	  if(head->td->wait_tids[i] >=0) {
+	    recordtimes ++;
+	    timesum += head->td->wait_tids[i];
+	  }
+	}
+	double new_priority = (double)timesum/recordtimes;
+	head->td->priority = new_priority;
+
+	// update total running tim
+	total_thrdnum ++;
+	total_runtime += runtime;
+	
 	//puts to either the suspended queue or the end of queue
 	if(insert_sus == TRUE) {
 	  printf("Scheduler in inserting susqueue %d\n", head->td->tid);
-	  thrd* newthread = copy_thread(head->td);                                                    tnode* newnode = new_tnode(newthread, NULL); 
+	  thrd* newthread = copy_thread(head->td);                                                        tnode* newnode = new_tnode(newthread, NULL); 
 	  insert_tail(sus_queue, newnode);
 	  printf("after insertion to sus queue %d\n", newnode->td->tid);
 	} else {
 	  thrd* newthread = copy_thread(head->td);
 	  tnode* newnode = new_tnode(newthread, NULL);
-	  insert_tail(fifo_queue, newnode);
+	  if(policy == FIFO) {
+	    insert_tail(fifo_queue, newnode);
+	  } else if (policy == SJF) {
+	    insert(sjf_queue, newnode);
+	  }
 	}
       }
 
@@ -183,6 +232,7 @@ static void scheduler(int policy, int insert_sus) {
 	gettimeofday(&t, NULL);
 	double curtime = calculate_time(t, begintime);
 	logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
+	gettimeofday(head->td->start, NULL);
 	swapcontext(schedule, head->td->uc);
       } else {
 	printf("No threads available Scheduler swap to main context\n");

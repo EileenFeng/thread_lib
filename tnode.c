@@ -38,6 +38,8 @@ static thrd* copythread(thrd* td) {
   newthread->wait_size = td->wait_size;
   newthread->wait_index = td->wait_index;
   newthread->wait_tids = malloc(sizeof(int) * td->wait_size);
+  newthread->start = malloc(sizeof(struct timeval));
+  memcpy(newthread->start, td->start, sizeof(struct timeval));
   memcpy(newthread->wait_tids, td->wait_tids, sizeof(int) * td->wait_size);
    for(int i = 0; i < td->index; i++) {
     newthread->last_thr_run[i] = td->last_thr_run[i];
@@ -60,11 +62,14 @@ static void free_node(tnode* tn) {
   if(tn == NULL) {
     return;
   }
-
   if (tn->td->uc->uc_stack.ss_sp != NULL) {
     free(tn->td->uc->uc_stack.ss_sp); // free the stack
+    tn->td->uc->uc_stack.ss_sp = NULL;
   }
-  free(tn->td->uc);
+  if(tn->td->uc != NULL) {
+    free(tn->td->uc);
+    tn->td->uc = NULL;
+  }
   free(tn->td->start);
   free(tn->td->wait_tids);
   free(tn->td);
