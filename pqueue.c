@@ -28,6 +28,9 @@ static void insert_node(pqueue pq, tnode* tn) {
     pq->size = 1;
     return;
   }
+  if(tn == NULL) {
+    return;
+  }
   tnode* thead = pq->head;
   if(tn->td->priority < thead->td->priority) {
     tn->next = thead;

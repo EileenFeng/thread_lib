@@ -25,6 +25,7 @@
 #define TRUE 1
 #define FALSE 0
 #define UNKNOWN -10 //used for unkonwn priorities
+#define MAINTID 1
 
 #define H -1
 #define M 0
@@ -58,6 +59,7 @@ static FILE* stream = NULL;
 
 static tnode* head = NULL; //points to the current running thread in the queue
 static thrd* mainthread = NULL;
+static tnode* mainnode = NULL;
 
 static ucontext_t* maincontext;
 static ucontext_t* schedule; 
@@ -114,6 +116,10 @@ static void scheduler(int policy, int insert_sus) {
 	  double curtime = calculate_time(t, begintime);
 	  logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
 	  firstthread = FALSE;
+	  if(head->td->wait_index < 0) {
+	    head->td->wait_index = 0;
+	  }
+	  head->td->wait_tids[head->td->wait_index] = MAINTID;
 	  swapcontext(schedule, head->td->uc);
 	} else {
 	  printf("In scheduler first threads in queue is running or stopped or terminated\n");
@@ -142,13 +148,20 @@ static void scheduler(int policy, int insert_sus) {
 	int temp_index = head->td->wait_index;
 	if(temp_index >= 0) {
 	  for(int i = 0; i <= temp_index; i++) {
+	    /* if(head->td->wait_tids[i] == MAINTID) {
+	      insert_tail(fifo_queue, mainnode);
+	      printf("added mainnode to fifo_queue\n");
+	      } else {*/
+	    
 	    tnode* find = find_tid(sus_queue, head->td->wait_tids[i]);
 	    if(find != NULL) {
-	      printf("insert %d back to ready queue\n", find->td->tid);
+	      printf("inserting back to READDDDDDY queue %d\n", find->td->tid);
 	      insert_tail(fifo_queue, find);
 	    } else {
 	      printf("scheduelr not found in suspended queue error\n");
 	    }
+
+	      // }
 	  }
 	}
 	
@@ -160,16 +173,14 @@ static void scheduler(int policy, int insert_sus) {
 
 	//puts to either the suspended queue or the end of queue
 	if(insert_sus == TRUE) {
-	  printf("Scheduler: insert to end of susqueue\n");
+	  printf("Scheduler in inserting susqueue %d\n", head->td->tid);
 	  thrd* newthread = copy_thread(head->td);                                                    tnode* newnode = new_tnode(newthread, NULL); 
 	  insert_tail(sus_queue, newnode);
-	  printf("inserted %d to sus queue, now sus queue size %d\n", head->td->tid, get_size(sus_queue));
+	  printf("after insertion to sus queue %d\n", newnode->td->tid);
 	} else {
-	  printf("Scheduler: insert to end of fifoqueue\n");
 	  thrd* newthread = copy_thread(head->td);
 	  tnode* newnode = new_tnode(newthread, NULL);
 	  insert_tail(fifo_queue, newnode);
-	  printf("after insertion to fifoqueue size of %d\n", get_size(fifo_queue));
 	}
       }
 
@@ -177,11 +188,10 @@ static void scheduler(int policy, int insert_sus) {
       head = head->next;
       // when the next head is NULL
       if(head != NULL) {
-	printf("Scheduler swap to next context\n");
+	printf("Scheduler swap to next context with tid %d\n", head->td->tid);
 	gettimeofday(&t, NULL);
 	double curtime = calculate_time(t, begintime);
 	logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
-	printf("here before swapping cur head tid %d\n", head->td->tid);
 	swapcontext(schedule, head->td->uc);
       } else {
 	printf("No threads available Scheduler swap to main context\n");
@@ -213,9 +223,10 @@ int thread_libinit(int policy)
   sigemptyset(&(maincontext->uc_sigmask));
   maincontext->uc_link = NULL;
   mainthread = new_thread(0, maincontext);
-  mainthread->tid = 0;
+  mainthread->tid = MAINTID;
   mainthread->state = SCHEDULED;
-    
+  mainnode = new_tnode(mainthread, NULL);
+  
   void* sta;
   schedule = malloc(sizeof(ucontext_t));
   getcontext(schedule);
@@ -258,20 +269,23 @@ int thread_libinit(int policy)
 
 
 int thread_libterminate(void)
-{ 
+{
   if(lib_init != TRUE) {
     printf("library not initialized\n");
     return FAIL;
   }
-
+  printf("fifo_queue size %d\n", get_size(fifo_queue));
   if(schedule_policy == FIFO) {
     free_queue(fifo_queue);
   }
+  printf("susq %d\n", get_size(sus_queue));
   free_queue(sus_queue);
+  printf("after susq\n");
   free(maincontext->uc_stack.ss_sp);
   free(maincontext);
   free(mainthread->wait_tids);
   free(mainthread);
+  free(mainnode);
   free(schedule->uc_stack.ss_sp);
   free(schedule);
   if(fclose(stream) == EOF) {
@@ -312,7 +326,6 @@ int thread_create(void (*func)(void *), void *arg, int priority)
     }
     insert_tail(fifo_queue, newnode);
   }
-  printf("after insert fifo queue sze: %d\n", get_size(fifo_queue));
   gettimeofday(&t, NULL);
   double curtime = calculate_time(t, begintime);
   logfile(curtime, "CREATED", newthread->tid, newthread->priority);
@@ -324,7 +337,6 @@ int thread_join(int tid) {
 
   if(head == NULL) {
     // the main thread is waiting for the thread tid
-    printf("join: head is null\n");
     mainthread->state = STOPPED;
     mainthread->wait_index = 0;
     mainthread->wait_tids[mainthread->wait_index] = tid;
@@ -334,11 +346,11 @@ int thread_join(int tid) {
     // wait_tid incremented before adding new stuff, thus the current tid will always points to some tid
     // check scheduler wait_tid for more info
 
-    printf("in her++++++++++++e\n");
     if(schedule_policy == FIFO) {
       tnode* target = find_tid(fifo_queue, tid);
       if(target == NULL) {
-	printf("In join: target not found\n");
+	return FAIL;
+      } else if(target->td->state == FINISHED) {
 	return FAIL;
       }
       if(target->td->wait_index < 0) {
@@ -351,14 +363,13 @@ int thread_join(int tid) {
 	target->td->wait_tids = realloc(target->td->wait_tids, sizeof(int) * target->td->wait_size);
       }
       target->td->wait_tids[target->td->wait_index] = head->td->tid;
-      printf(")))))))))now wait tid is %d     %d\n", target->td->tid, target->td->wait_tids[target->td->wait_index]);
       head->td->state = STOPPED;
       makecontext(schedule, scheduler, 2, FIFO, TRUE);
       swapcontext(head->td->uc, schedule);
       return TRUE;
     }
   }
-  return FAIL;
+  return TRUE;
 }
 
 int thread_yield(void) {
@@ -369,29 +380,5 @@ int thread_yield(void) {
 
 }
 
-/*
-  int main(int argc, char **argv)
-  {
-  thread_libinit(FIFO);
-  //  thread_libterminate();
-  struct timeval begin;
-  struct timeval end;
-  gettimeofday(&begin, NULL);
-  ucontext_t uc;
-  void *stack = malloc(2048);
-  uc.uc_stack.ss_sp = stack;
-  uc.uc_stack.ss_size = 2048;
-  getcontext(&uc);
-  thrd *td = new_thread(0, uc);
-  tnode *tn = new_tnode(td, NULL);
-  pqueue pq = new_queue();
-  insert(pq, tn);
-  tnode *h = get_head(pq);
-  gettimeofday(&end, NULL);
-  printf("head tid is %d\n", h->td->tid);
-  double interval = end.tv_sec * 1000000 + end.tv_usec - begin.tv_sec * 1000000 - begin.tv_usec;
-  printf("execution time is %f\n", interval);
-  
-  }
-*/
+
  
