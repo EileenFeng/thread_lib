@@ -27,10 +27,12 @@ typedef struct tnode {
   struct tnode* next;
 } tnode;
 
-thrd* (*new_thread) (int, ucontext_t*);
+extern thrd* (*new_thread) (int, ucontext_t*);
 
-tnode* (*new_tnode) (thrd*, tnode*);
+extern tnode* (*new_tnode) (thrd*, tnode*);
 
-void (*free_tnode) (tnode*);
+extern void (*free_tnode) (tnode*);
+
+extern thrd* (*copy_thread) (thrd*);
 
 #endif

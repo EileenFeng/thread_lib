@@ -4,28 +4,28 @@
 
 typedef struct pqueue_record* pqueue;
 
-pqueue (*new_queue) ();
+extern pqueue (*new_queue) ();
 
-int (*get_size) (pqueue);
+extern int (*get_size) (pqueue);
 
-tnode* (*get_head) (pqueue);
+extern tnode* (*get_head) (pqueue);
 
-void (*insert) (pqueue, tnode*); // insertion based on priority
+extern void (*insert) (pqueue, tnode*); // insertion based on priority
 
-tnode* (*find_tid) (pqueue, int);
+extern tnode* (*find_tid) (pqueue, int);
 
-void (*insert_tail) (pqueue, tnode*); 
+extern void (*insert_tail) (pqueue, tnode*); 
 
-void (*insert_after) (pqueue, tnode*, tnode*);
+extern void (*insert_after) (pqueue, tnode*, tnode*);
 
-void (*pop_head) (pqueue); // does not free head
+extern void (*pop_head) (pqueue); // does not free head
 
-void (*delete_head) (pqueue); // free head
+extern void (*delete_head) (pqueue); // free head
 
-void (*remove_node) (pqueue, int);
+extern void (*remove_node) (pqueue, int);
 
-void (*free_queue) (pqueue);
+extern void (*free_queue) (pqueue);
 
-void (*move_head) (pqueue, pqueue);
+extern void (*move_head) (pqueue, pqueue);
 
 #endif
