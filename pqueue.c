@@ -38,11 +38,12 @@ static void insert_node(pqueue pq, tnode* tn) {
     pq->size ++;
     return;
   }
-  while(thead->next != NULL && thead->next->td->priority < tn->td->priority) {
+  while(thead->next != NULL && thead->next->td->priority <= tn->td->priority) {
     thead = thead->next;
   }
-  tn->next = thead->next;
-  thead->next = tn->next;
+  tnode* temp = thead->next;
+  thead->next = tn;
+  tn->next = temp;
   pq->size++;
   return;
 }
