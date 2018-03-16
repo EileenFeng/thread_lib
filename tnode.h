@@ -10,7 +10,7 @@ typedef struct thrd {
   int tid;
   int state; // scheduled or stopped
   int schedule; // scheduling algorithm
-  int priority;
+  double priority;
   int index; // writing index to the last_thr_run array
   double last_run; // the time interval of the last run
   double last_thr_run[RECORD_NUM]; // the last three run times
