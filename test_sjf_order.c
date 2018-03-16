@@ -22,7 +22,7 @@ int main() {
   for(int i = 0; i < 10; i++) {
     tids[i] = -1;
   }
-  //int tid = thread_create(yield, "111", -1);
+  int tid = thread_create(yield, "111", -1);
   for(int i = 0; i < 10; i++) {
     tids[i] = thread_create(normal, i, -1);
   }

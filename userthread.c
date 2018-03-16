@@ -96,7 +96,6 @@ static void stubfunc(void (*func)(void *), void *arg) {
   gettimeofday(head->td->start, NULL);
   head->td->last_run = runtime;
   head->td->state = FINISHED;
-  printf("finished? %d with tid %d\n", head->td->state, head->td->tid);
   int temp = head->td->index;
   head->td->last_thr_run[temp] = runtime;
   head->td->index = (temp + 1) % RECORD_NUM;
@@ -107,21 +106,17 @@ static void stubfunc(void (*func)(void *), void *arg) {
 }
 
 static void scheduler(int policy, int insert_sus) {
-  printf("in scheduler queue size %d\n", get_size(sjf_queue));
   struct timeval t;
   // when head initially is NULL
   if(head == NULL) {
-    printf("in scheduler head is null and firstthread %d\n", firstthread);
     if(firstthread == TRUE) {
 
       if(schedule_policy == FIFO || schedule_policy == SJF) {
-	printf("in head == null scheduler target queue \n");
 	if(schedule_policy == FIFO) {
 	  head = get_head(fifo_queue);
 	} else if (schedule_policy == SJF) {
 	  head = get_head(sjf_queue);
 	}
-	printf("starting for head %d with state %d \n", head->td->tid,  head->td->state);
 	if(head->td->state == CREATED) {
 	  head->td->state = SCHEDULED;
 	  gettimeofday(&t, NULL);
@@ -133,7 +128,6 @@ static void scheduler(int policy, int insert_sus) {
 	  }
 	  head->td->wait_tids[head->td->wait_index] = MAINTID;
 	  gettimeofday(head->td->start, NULL);
-	  printf("Scheduler starts with %d\n", head->td->tid);
 	  swapcontext(schedule, head->td->uc);
 	} else {
 	  printf("In scheduler first threads in queue is running or stopped or terminated back to main context\n");
@@ -179,7 +173,6 @@ static void scheduler(int policy, int insert_sus) {
 	      thrd* newthread = copy_thread(findnode->td);
 	      tnode* find = new_tnode(newthread, NULL);
 	      find->td->state == CREATED;
-	      printf("inserting back to READDDDDDY queue %d\n", find->td->tid);
 	      if(policy == FIFO) {
 		insert_tail(fifo_queue, find);
 	      } else if(policy == SJF) {
@@ -189,9 +182,6 @@ static void scheduler(int policy, int insert_sus) {
 	    } else {
 	      printf("scheduelr not found in suspended queue error\n");
 	    }
-	    //}
-	    
-	    //}
 	  }
 	}
 	
@@ -223,10 +213,8 @@ static void scheduler(int policy, int insert_sus) {
 	
 	//puts to either the suspended queue or the end of queue
 	if(insert_sus == TRUE) {
-	  printf("Scheduler in inserting susqueue %d\n", head->td->tid);
-	  thrd* newthread = copy_thread(head->td);                                                        tnode* newnode = new_tnode(newthread, NULL); 
+	  thrd* newthread = copy_thread(head->td);                                                            tnode* newnode = new_tnode(newthread, NULL); 
 	  insert_tail(sus_queue, newnode);
-	  printf("after insertion to sus queue %d\n", newnode->td->tid);
 	} else {
 	  thrd* newthread = copy_thread(head->td);
 	  tnode* newnode = new_tnode(newthread, NULL);
@@ -243,14 +231,12 @@ static void scheduler(int policy, int insert_sus) {
       head = head->next;
       // when the next head is NULL
       if(head != NULL) {
-	printf("Scheduler swap to next context with tid %d\n", head->td->tid);
 	gettimeofday(&t, NULL);
 	double curtime = calculate_time(t, begintime);
 	logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
 	gettimeofday(head->td->start, NULL);
 	swapcontext(schedule, head->td->uc);
       } else {
-	printf("No threads available Scheduler swap to main context\n");
 	firstthread = TRUE;
 	swapcontext(schedule, maincontext);
       }
@@ -344,9 +330,7 @@ int thread_libterminate(void)
   } else if(schedule_policy == SJF) {
     free_queue(sjf_queue);
   }
-  printf("susq %d\n", get_size(sus_queue));
   free_queue(sus_queue);
-  printf("after susq\n");
   free(maincontext->uc_stack.ss_sp);
   free(maincontext);
   free(mainthread->wait_tids);
@@ -390,7 +374,6 @@ int thread_create(void (*func)(void *), void *arg, int priority)
     } else {
       newthread->priority = (double)total_runtime/total_thrdnum;
     }
-    //    newthread->priority = UNKNOWN;
     newnode = new_tnode(newthread, NULL);
     if(newnode == NULL) {
       return FAIL;
@@ -429,7 +412,6 @@ int thread_join(int tid) {
       } else if(schedule_policy == SJF) {
 	target = find_tid(sjf_queue, tid);
       }
-      printf("in join target state and tid: %d  %d\n", target->td->state, target->td->tid);
       if(target == NULL) {
 	return FAIL;
       } else if(target->td->state != CREATED) {
@@ -448,7 +430,6 @@ int thread_join(int tid) {
       head->td->state = STOPPED;
       makecontext(schedule, scheduler, 2, FIFO, TRUE);
       gettimeofday(head->td->start, NULL);
-      printf("before swap in join\n");
       swapcontext(head->td->uc, schedule);
       return TRUE;
     }
