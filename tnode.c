@@ -16,6 +16,7 @@ thrd* new_thrd(int tid, ucontext_t* uc) {
   td->tid = tid;
   td->last_run = NOTSET;
   td->index = 0;
+  td->start = malloc(sizeof(struct timeval));
   td->wait_tids = malloc(sizeof(int) * ARRSIZE);
   td->wait_index = NOTSET;
   td->wait_size = ARRSIZE;
@@ -64,6 +65,7 @@ static void free_node(tnode* tn) {
     free(tn->td->uc->uc_stack.ss_sp); // free the stack
   }
   free(tn->td->uc);
+  free(tn->td->start);
   free(tn->td->wait_tids);
   free(tn->td);
   free(tn);

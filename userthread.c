@@ -272,8 +272,11 @@ int thread_libterminate(void)
     return FAIL;
   }
   printf("fifo_queue size %d\n", get_size(fifo_queue));
+  
   if(schedule_policy == FIFO) {
     free_queue(fifo_queue);
+  } else if(schedule_policy == SJF) {
+    free_queue(sjf_queue);
   }
   printf("susq %d\n", get_size(sus_queue));
   free_queue(sus_queue);
@@ -281,6 +284,7 @@ int thread_libterminate(void)
   free(maincontext->uc_stack.ss_sp);
   free(maincontext);
   free(mainthread->wait_tids);
+  free(mainthread->start);
   free(mainthread);
   free(mainnode);
   free(schedule->uc_stack.ss_sp);

@@ -15,7 +15,7 @@ typedef struct thrd {
   double last_run; // the time interval of the last run
   double last_thr_run[RECORD_NUM]; // the last three run times
   ucontext_t* uc;
-
+  struct timeval *start;
   // needs to change to all threads waiting for me
   int* wait_tids;
   int wait_size;
