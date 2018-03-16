@@ -5,7 +5,7 @@
 
 void yield(char* number) {
   for(int i = 0; i < 5; i ++) {
-    printf("yeilding  %s \n", number);
+    printf("yeilding  %s %d\n", number, i);
     thread_yield();
     sleep(1);
   }

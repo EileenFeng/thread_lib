@@ -28,4 +28,6 @@ extern void (*free_queue) (pqueue);
 
 extern void (*move_head) (pqueue, pqueue);
 
+extern void (*arrange_queue) (pqueue, tnode*);
+
 #endif

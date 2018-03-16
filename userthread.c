@@ -189,27 +189,37 @@ static void scheduler(int policy, int insert_sus) {
 	// log the file
 	gettimeofday(&t, NULL);
 	double curtime = calculate_time(t, begintime);
-	logfile(curtime, "STOPPED", head->td->tid, head->td->priority);
-	
-	// update the current thread's run time
 	double runtime = calculate_time(t, *(head->td->start));
+	//	gettimeofday(head->td->start, NULL);
+	logfile(curtime, "STOPPED", head->td->tid, head->td->priority);
+	printf("thread %d runs for %f last time\n", head->td->tid, runtime);
+	// update the current thread's run time
+	//double runtime = calculate_time(t, *(head->td->start));
 	int temp = head->td->index;
 	head->td->last_thr_run[temp] = runtime;
 	head->td->index = (temp+1) % RECORD_NUM;
+	total_thrdnum ++;                                                                           
+        total_runtime += runtime;                                                                    
 	int recordtimes = 0;
 	double timesum = 0;
 	for(int i = 0; i < RECORD_NUM; i++) {
-	  if(head->td->wait_tids[i] >=0) {
+	  if(head->td->last_thr_run[i] >=0) {
 	    recordtimes ++;
-	    timesum += head->td->wait_tids[i];
+	    timesum += head->td->last_thr_run[i];
 	  }
 	}
-	double new_priority = (double)timesum/recordtimes;
+	double new_priority = (double)timesum/(double)recordtimes;
 	head->td->priority = new_priority;
-	
-	// update total running tim
-	total_thrdnum ++;
-	total_runtime += runtime;
+	tnode* tempnode = head; // after update need to rearrange the order of the queue
+	if(policy == SJF) {
+	  arrange_queue(sjf_queue, tempnode);
+	  /*	  tnode* temp = get_head(sjf_queue);                                                       
+	   for(int i = 0; i < get_size(sjf_queue); i++) {                                           
+	     printf("tid and priority %d    %f\n", temp->td->tid, temp->td->priority);              
+	     temp = temp->next;                                                                     
+	   }
+	  */   
+	}
 	
 	//puts to either the suspended queue or the end of queue
 	if(insert_sus == TRUE) {
@@ -222,6 +232,13 @@ static void scheduler(int policy, int insert_sus) {
 	  insert_tail(fifo_queue, newnode);
 	  } else if (policy == SJF) {
 	    insert(sjf_queue, newnode);
+	    /*printf("in scheduling after inserting:\n");
+	    tnode* temp = get_head(sjf_queue);
+	    for(int i = 0; i < get_size(sjf_queue); i++) {
+	      printf("tid and priority %d    %d\n", temp->td->tid, temp->td->priority);
+	      temp = temp->next;
+	    }
+	    */
 	  }
 	}
       }
@@ -329,6 +346,7 @@ int thread_libterminate(void)
     free_queue(fifo_queue);
   } else if(schedule_policy == SJF) {
     free_queue(sjf_queue);
+    printf("2\n");
   }
   free_queue(sus_queue);
   free(maincontext->uc_stack.ss_sp);
@@ -370,7 +388,8 @@ int thread_create(void (*func)(void *), void *arg, int priority)
     newthread->state = CREATED;
     newthread->last_run = 0;
     if(total_thrdnum == 0) {
-      newthread->priority = (double)QUANTA / 2;
+      int quanta = QUANTA;
+      newthread->priority = (double)(quanta/2);
     } else {
       newthread->priority = (double)total_runtime/total_thrdnum;
     }
@@ -438,10 +457,15 @@ int thread_join(int tid) {
 }
 
 int thread_yield(void) {
-    
+
+  if(head->next == NULL) {
+    return SUCCESS;
+  }
   head->td->state = STOPPED;
+  printf("tid %d yield\n", head->td->tid);
   makecontext(schedule, scheduler, 2, schedule_policy, FALSE);
   swapcontext(head->td->uc, schedule);
+  return SUCCESS;
 
 }
 

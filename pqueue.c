@@ -48,6 +48,43 @@ static void insert_node(pqueue pq, tnode* tn) {
   return;
 }
 
+static void arrange(pqueue pq, tnode* target) {
+  tnode* curhead = get_head(pq);
+  if(curhead->td->tid == target->td->tid) {
+    if(curhead->td->priority < curhead->next->td->priority) {
+      return;
+    } 
+  }
+  tnode* pre = NULL;
+  tnode* cur = NULL;
+  tnode* nex = NULL;
+  cur = pq->head;
+  printf("1\n");
+  while(cur != NULL && cur->td->tid != target->td->tid) {
+    pre = cur;
+    cur = nex;
+    printf("3\n");
+    if(cur != NULL) {
+      nex = cur->next;
+    } else {
+      nex = NULL;
+    }
+  }
+  if(cur == NULL) {
+    return;
+  } else {
+    if(pre != NULL) {
+      printf("4\n");
+      pre->next = nex;
+    } else {
+      pq->head = nex;
+    }
+    insert_node(pq, target);
+    
+  }
+  
+}
+
 static void add_tail(pqueue pq, tnode* tn) {
   if(pq->size == 0) {
     pq->head = tn;
@@ -175,7 +212,7 @@ extern void (*pop_head) (pqueue) = &pophead;
 extern void (*delete_head) (pqueue) = &deletehead;
 extern tnode* (*find_tid) (pqueue, int) = &findtid;
 extern void (*move_head) (pqueue, pqueue) = &movehead_finished;
-
+extern void (*arrange_queue) (pqueue, tnode*) = &arrange;
 /*
 void hello() {
   printf("haha1 \n");
