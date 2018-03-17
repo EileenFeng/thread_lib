@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "tnode.h"
-
+#define STACKSIZE (256*1024)
 
 thrd* new_thrd(int tid, ucontext_t* uc) {
   thrd* td = (thrd*)malloc(sizeof(thrd));
@@ -29,7 +29,12 @@ thrd* new_thrd(int tid, ucontext_t* uc) {
 static thrd* copythread(thrd* td) {
   thrd* newthread = malloc(sizeof(thrd));
   if(newthread == NULL) { return NULL; }
-  newthread->uc = td->uc;
+  newthread->uc = malloc(sizeof(ucontext_t));
+  memcpy(newthread->uc, td->uc, sizeof(ucontext_t));
+  newthread->uc->uc_stack.ss_sp = malloc(STACKSIZE);
+  memcpy(newthread->uc->uc_stack.ss_sp, td->uc->uc_stack.ss_sp, STACKSIZE);
+  
+  //newthread->uc = td->uc;
   newthread->tid = td->tid;
   newthread->state = td->state;
   newthread->priority = td->priority;

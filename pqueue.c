@@ -3,6 +3,14 @@
 #include <stdio.h>
 #include "pqueue.h"
 
+enum state {
+  CREATED,
+  SCHEDULED,
+  STOPPED,
+  FINISHED
+};
+
+
 typedef struct pqueue_record{
   tnode* head;
   int size;
@@ -32,14 +40,20 @@ static void insert_node(pqueue pq, tnode* tn) {
     return;
   }
   tnode* thead = pq->head;
-  if(tn->td->priority < thead->td->priority) {
+  if(tn->td->priority < thead->td->priority && thead->td->state != FINISHED) {
     tn->next = thead;
     pq->head = tn;
     pq->size ++;
     return;
   }
-  while(thead->next != NULL && thead->next->td->priority <= tn->td->priority) {
-    thead = thead->next;
+  while(thead->next != NULL) {
+    if(thead->next->td->priority <= tn->td->priority) {
+      thead = thead->next;
+    } else if(thead->next->td->state == FINISHED) {
+      thead = thead->next;
+    } else {
+      break;
+    }
   }
   tnode* temp = thead->next;
   thead->next = tn;
@@ -130,14 +144,18 @@ static void free_list(pqueue pq) {
     tnode* cur = pq->head;
     tnode* nex = cur->next;
     while(nex != NULL) {
+      printf("current tid: %d state %d\n", cur->td->tid, cur->td->state);
       free_tnode(cur);
       cur = nex;
       nex = nex->next;
     }
+    printf("fre list out side of loop\n");
+    printf("current tid: %d\n", cur->td->tid);
     free_tnode(cur);
     free(pq);
     return;
   } else {
+    printf("free again?\n");
     free(pq);
     return;
   }
