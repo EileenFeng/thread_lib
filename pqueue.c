@@ -67,7 +67,7 @@ static void arrange(pqueue pq, tnode* target) {
   if(curhead->td->tid == target->td->tid) {
     if(curhead->td->priority < curhead->next->td->priority) {
       return;
-    } 
+    }
   }
   tnode* pre = NULL;
   tnode* cur = NULL;
@@ -91,9 +91,7 @@ static void arrange(pqueue pq, tnode* target) {
       pq->head = nex;
     }
     insert_node(pq, target);
-    
   }
-  
 }
 
 static void add_tail(pqueue pq, tnode* tn) {
@@ -178,8 +176,8 @@ static void pophead(pqueue pq) {
 
 static void deletehead(pqueue pq) {
   if(pq->size != 0) {
-    printf("in here\n");
-    tnode* oldhead = pq->head;    
+    printf("inside of deletehead deleting %d with priority %f\n", pq->head->td->tid, pq->head->td->priority);
+    tnode* oldhead = pq->head;
     tnode* curnext = pq->head->next;
     free_tnode(oldhead);
     pq->head = curnext;
@@ -236,7 +234,7 @@ void hello2() {
 
 
 int main() {
-  
+
   printf("2");
   ucontext_t uc;
   void* stack = malloc(2048);
@@ -251,8 +249,8 @@ int main() {
   td->tid = 0;
   printf("4");
   tnode* tn = new_node(td, NULL);
- 
-   
+
+
   ucontext_t uc1;
   void* stack1 = malloc(2048);
   uc1.uc_stack.ss_sp = stack1;
@@ -267,7 +265,7 @@ int main() {
   printf("42");
   tnode* tn1 = new_node(td1, NULL);
 
-  
+
   pqueue newq = new_queue();
   insert(newq, tn1);
   insert(newq, tn);

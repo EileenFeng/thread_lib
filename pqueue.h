@@ -14,7 +14,7 @@ extern void (*insert) (pqueue, tnode*); // insertion based on priority
 
 extern tnode* (*find_tid) (pqueue, int);
 
-extern void (*insert_tail) (pqueue, tnode*); 
+extern void (*insert_tail) (pqueue, tnode*);
 
 extern void (*insert_after) (pqueue, tnode*, tnode*);
 
@@ -29,5 +29,6 @@ extern void (*free_queue) (pqueue);
 extern void (*move_head) (pqueue, pqueue);
 
 extern void (*arrange_queue) (pqueue, tnode*);
+
 
 #endif
