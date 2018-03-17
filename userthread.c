@@ -61,7 +61,7 @@ static tnode* mainnode = NULL;
 
 static ucontext_t* maincontext;
 static ucontext_t* schedule; 
-
+ 
 static pqueue sus_queue = NULL; //suspended threads b/c joining threads
 //extern void (*logfile) (double, char*, int, int); 
 
@@ -107,7 +107,7 @@ static void stubfunc(void (*func)(void *), void *arg) {
   swapcontext(head->td->uc, schedule);
 
 }
-
+ 
 static void scheduler(int policy, int insert_sus) {
   struct timeval t;
   // when head initially is NULL
@@ -233,13 +233,6 @@ static void scheduler(int policy, int insert_sus) {
 	  } else if (policy == SJF) {
 	    insert(sjf_queue, newnode);
 	    printf("-----queue size %d\n", get_size(sjf_queue));
-	    /*printf("in scheduling after inserting:\n");
-	      tnode* temp = get_head(sjf_queue);
-	      for(int i = 0; i < get_size(sjf_queue); i++) {
-	      printf("tid and priority %d    %d\n", temp->td->tid, temp->td->priority);
-	      temp = temp->next;
-	      }
-	    */
 	  }
 	}
       }
@@ -299,7 +292,7 @@ int thread_libinit(int policy)
   schedule->uc_stack.ss_flags = SS_DISABLE;
   sigemptyset(&(schedule->uc_sigmask));
   schedule->uc_link = NULL;
-  makecontext(schedule, scheduler, 2, schedule_policy, UNKNOWN);
+  makecontext(schedule, (void (*)(void))scheduler, 2, schedule_policy, UNKNOWN);
 
   if((logfd = open("log.txt", O_CREAT | O_TRUNC | O_WRONLY, 0666)) == FAIL) {
     perror("Failed to open file in init: ");
@@ -331,9 +324,14 @@ int thread_libinit(int policy)
       printf("Creating sjf queue failed\n");
       return FAIL;
     }
+  } else if (policy == PRIORITY) {
+    first = new_queue();
+    second = new_queue();
+    third = new_queue();
   }
-  lib_init = TRUE;
 
+  
+  lib_init = TRUE;
   return SUCCESS;
 }
 
@@ -349,7 +347,12 @@ int thread_libterminate(void)
     free_queue(fifo_queue);
   } else if(schedule_policy == SJF) {
     free_queue(sjf_queue);
+  } else if(schedule_policy) {
+    free_queue(first);
+    free_queue(second);
+    free_queue(third);
   }
+  
   free_queue(sus_queue);
   free(maincontext->uc_stack.ss_sp);
   free(maincontext);
@@ -385,8 +388,9 @@ int thread_create(void (*func)(void *), void *arg, int priority)
   }
   tidcount++;
   tnode* newnode = NULL;
+
   if(schedule_policy == FIFO || schedule_policy == SJF) {
-    newthread->schedule = FIFO;
+    newthread->schedule = schedule_policy;
     newthread->state = CREATED;
     newthread->last_run = 0;
     if(total_thrdnum == 0) {
@@ -404,6 +408,19 @@ int thread_create(void (*func)(void *), void *arg, int priority)
     } else if(schedule_policy == SJF) {
       insert(sjf_queue, newnode);
     }
+  } else if (schedule_policy == PRIORITY) {
+
+    newthread->schedule = schedule_policy;
+    newthread->state = CREATED;
+    newthread->last_run = 0;
+    newthread->priority = priority;
+    newnode = new_tnode(newthread, NULL);
+    if(newnode == NULL) {
+      return FAIL;
+    }
+    
+  } else {
+    return FAIL;
   }
   gettimeofday(&t, NULL);
   double curtime = calculate_time(t, begintime);
@@ -449,7 +466,7 @@ int thread_join(int tid) {
       }
       target->td->wait_tids[target->td->wait_index] = head->td->tid;
       head->td->state = STOPPED;
-      makecontext(schedule, scheduler, 2, FIFO, TRUE);
+      makecontext(schedule, (void (*)(void))scheduler, 2, FIFO, TRUE);
       gettimeofday(head->td->start, NULL);
       swapcontext(head->td->uc, schedule);
       return TRUE;
@@ -462,7 +479,8 @@ int thread_yield(void) {
 
   /*  if(head->next == NULL) {
       return SUCCESS;
-      }*/
+      }
+  */
   head->td->state = STOPPED;
   printf("tid %d yield\n", head->td->tid);
   makecontext(schedule, scheduler, 2, schedule_policy, FALSE);

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/time.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -42,10 +43,12 @@ static thrd* copythread(thrd* td) {
   newthread->index = td->index;
   newthread->wait_size = td->wait_size;
   newthread->wait_index = td->wait_index;
+
   newthread->wait_tids = malloc(sizeof(int) * td->wait_size);
   newthread->start = malloc(sizeof(struct timeval));
   memcpy(newthread->start, td->start, sizeof(struct timeval));
   memcpy(newthread->wait_tids, td->wait_tids, sizeof(int) * td->wait_size);
+  
    for(int i = 0; i < td->index; i++) {
     newthread->last_thr_run[i] = td->last_thr_run[i];
   }
