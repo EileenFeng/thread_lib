@@ -276,7 +276,7 @@ static void scheduler(int policy, int insert_sus) {
 	double curtime = calculate_time(t, begintime);
 	logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
 	gettimeofday(head->td->start, NULL);
-	printf("before swapping\n");
+	printf("before swapping now running %d\n", head->td->tid);
 	swapcontext(schedule, head->td->uc);
       } else {
 	firstthread = TRUE;
