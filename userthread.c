@@ -175,7 +175,11 @@ static void scheduler(int policy, int insert_sus) {
 	      find->td->state == CREATED;
 	      if(policy == FIFO) {
 		insert_tail(fifo_queue, find);
+		// diff
+		//remove_node(fifo_queue, head->td->tid);
+		// diff
 	      } else if(policy == SJF) {
+		//diff
 		insert(sjf_queue, find);
 	      }
 	      
@@ -231,7 +235,17 @@ static void scheduler(int policy, int insert_sus) {
 	  if(policy == FIFO) {
 	  insert_tail(fifo_queue, newnode);
 	  } else if (policy == SJF) {
+	    printf("-------Before insert\n");
+	    tnode* temp = head;                                                                  
+            while(temp != NULL) {                                                                              printf("remains %d tid\n", temp->td->tid);                                                       temp = temp->next;                                                                             } 
+	    printf("------insert hhaa\n");
 	    insert(sjf_queue, newnode);
+	    temp = head;
+	    while(temp != NULL) {
+	      printf("remains %d tid\n", temp->td->tid);
+	      temp = temp->next;
+	    }
+	    printf("-----queue size %d\n", get_size(sjf_queue));
 	    /*printf("in scheduling after inserting:\n");
 	    tnode* temp = get_head(sjf_queue);
 	    for(int i = 0; i < get_size(sjf_queue); i++) {
@@ -458,9 +472,9 @@ int thread_join(int tid) {
 
 int thread_yield(void) {
 
-  if(head->next == NULL) {
+  /*  if(head->next == NULL) {
     return SUCCESS;
-  }
+    }*/
   head->td->state = STOPPED;
   printf("tid %d yield\n", head->td->tid);
   makecontext(schedule, scheduler, 2, schedule_policy, FALSE);
