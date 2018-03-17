@@ -183,7 +183,7 @@ static void scheduler(int policy, int insert_sus) {
 	      }
 	      
 	    } else {
-	      printf("scheduelr not found in suspended queue error  %d\n", head->td->wait_tids[i]);
+	      printf("scheduelr not found in suspended queue thread tid not found is  %d\n", head->td->wait_tids[i]);
 	      
 	    }
 	  }
@@ -237,24 +237,7 @@ static void scheduler(int policy, int insert_sus) {
 	  if(policy == FIFO) {
 	    insert_tail(fifo_queue, newnode);
 	  } else if (policy == SJF) {
-	    printf("-------Before insert\n");
-	    tnode* temp;
-	    printf("whole queue -------- before -----\n");
-	    temp = get_head(sjf_queue);
-	    while(temp != NULL) {
-	      printf("remains %d tid state %d\n", temp->td->tid, temp->td->state);               
-	      temp = temp->next;        
-	    }
-	    printf("------insert hhaa\n");
 	    insert(sjf_queue, newnode);
-	    temp = head;
-	    while(temp != NULL) {
-	      printf("remains %d tid  %d state\n", temp->td->tid, temp->td->state);
-	      temp = temp->next;
-	    }
-
-	    printf("whoe queueu ======== aft=========\n");
-	    temp = get_head(sjf_queue);                                                                       while(temp != NULL) {                                                                              printf("remains %d tid state %d and p %f\n", temp->td->tid, temp->td->state, temp->td->priority);                             temp = temp->next;                                                                             }   
 	    printf("-----queue size %d\n", get_size(sjf_queue));
 	    /*printf("in scheduling after inserting:\n");
 	      tnode* temp = get_head(sjf_queue);
@@ -371,14 +354,7 @@ int thread_libterminate(void)
   if(schedule_policy == FIFO) {
     free_queue(fifo_queue);
   } else if(schedule_policy == SJF) {
-    printf("in free???\n");
-    tnode* temp = get_head(sjf_queue);
-    while(temp != NULL) {
-      printf("tid %d  p %f\n", temp->td->tid, temp->td->priority);
-      temp = temp->next;
-    }
     free_queue(sjf_queue);
-    printf("2\n");
   }
   free_queue(sus_queue);
   free(maincontext->uc_stack.ss_sp);

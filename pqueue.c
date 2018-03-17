@@ -73,11 +73,9 @@ static void arrange(pqueue pq, tnode* target) {
   tnode* cur = NULL;
   tnode* nex = NULL;
   cur = pq->head;
-  printf("1\n");
   while(cur != NULL && cur->td->tid != target->td->tid) {
     pre = cur;
     cur = nex;
-    printf("3\n");
     if(cur != NULL) {
       nex = cur->next;
     } else {
@@ -88,7 +86,6 @@ static void arrange(pqueue pq, tnode* target) {
     return;
   } else {
     if(pre != NULL) {
-      printf("4\n");
       pre->next = nex;
     } else {
       pq->head = nex;
@@ -144,18 +141,14 @@ static void free_list(pqueue pq) {
     tnode* cur = pq->head;
     tnode* nex = cur->next;
     while(nex != NULL) {
-      printf("current tid: %d state %d\n", cur->td->tid, cur->td->state);
       free_tnode(cur);
       cur = nex;
       nex = nex->next;
     }
-    printf("fre list out side of loop\n");
-    printf("current tid: %d\n", cur->td->tid);
     free_tnode(cur);
     free(pq);
     return;
   } else {
-    printf("free again?\n");
     free(pq);
     return;
   }
