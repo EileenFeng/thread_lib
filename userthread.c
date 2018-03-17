@@ -17,12 +17,16 @@
 #define FALSE 0
 #define UNKNOWN -10 //used for unkonwn priorities
 #define MAINTID 1
+
 #define QUANTA 100000 // in microseconds = 100 milliseconds
 
 #define H -1
 #define M 0
 #define L 1
-
+#define HNUM 9  // not used
+#define MNUM 6 // notused
+#define LNUM 4  // not used
+#define TOTALNUM 19
 /****************************** globals ***********************************/
 
 // enums
@@ -44,6 +48,8 @@ static pqueue first, second, third;
 
 //static timeval begintime; // records beginning time of lib init
 static struct timeval begintime;
+static struct itimerval timer; // timer for priority scheduling 
+
 static int lib_init = FALSE;
 static int schedule_policy = -1;    // policy of current scheduling
 static int tidcount = 2; //counting the number of threads
@@ -51,6 +57,7 @@ static int firstthread = TRUE;
 static double total_runtime = 0;
 static int total_thrdnum = 0;
 
+sigset_t blocked; // signal set for priority scheduling 
 
 static int logfd;        // the file descriptor of the log file
 static FILE* stream = NULL;
@@ -58,6 +65,9 @@ static FILE* stream = NULL;
 static tnode* head = NULL; //points to the current running thread in the queue
 static thrd* mainthread = NULL;
 static tnode* mainnode = NULL;
+
+char turns[TOTALNUM];
+int trackturns = UNKNOWN;
 
 static ucontext_t* maincontext;
 static ucontext_t* schedule; 
@@ -294,6 +304,7 @@ int thread_libinit(int policy)
   schedule->uc_link = NULL;
   makecontext(schedule, (void (*)(void))scheduler, 2, schedule_policy, UNKNOWN);
 
+  
   if((logfd = open("log.txt", O_CREAT | O_TRUNC | O_WRONLY, 0666)) == FAIL) {
     perror("Failed to open file in init: ");
     return FAIL;
@@ -325,11 +336,44 @@ int thread_libinit(int policy)
       return FAIL;
     }
   } else if (policy == PRIORITY) {
+
     first = new_queue();
     second = new_queue();
     third = new_queue();
-  }
 
+    // set timer
+    timer.it_interval.tv_sec = 0;
+    timer.it_interval.tv_usec = QUANTA;
+    timer.it_value.tv_sec = 0;
+    timer.it_value.tv_sec = 1;
+    
+    sigemptyset(&blocked);
+    sigaddset(&blocked, SIGALRM);
+    
+    int track = 0;
+    while(track < TOTALNUM) {
+      char temp[4] = {H, M, L, H};
+      for(int i = 0; i < 4; i++) {
+	turns[track] = temp[i];
+	track ++;
+      }
+      if(track == 4) {
+	turns[track] = M;
+	track ++;
+      } else if (track == 9) {
+	turns[track] = M;
+	track ++;
+      } else if(track == 14) {
+	turns[track] = H;
+	track++;
+      }
+    }
+      
+    for(int i = 0; i < TOTALNUM; i++) {
+      printf("turns[%d] is %d\n", i, turns[i]);
+    }
+    trackturns = 0;
+  }
   
   lib_init = TRUE;
   return SUCCESS;
@@ -347,11 +391,13 @@ int thread_libterminate(void)
     free_queue(fifo_queue);
   } else if(schedule_policy == SJF) {
     free_queue(sjf_queue);
-  } else if(schedule_policy) {
+  } else if(schedule_policy == PRIORITY) {
+
     free_queue(first);
     free_queue(second);
     free_queue(third);
-  }
+    
+  } 
   
   free_queue(sus_queue);
   free(maincontext->uc_stack.ss_sp);
@@ -417,6 +463,13 @@ int thread_create(void (*func)(void *), void *arg, int priority)
     newnode = new_tnode(newthread, NULL);
     if(newnode == NULL) {
       return FAIL;
+    }
+    if(priority == H) {
+      insert_tail(first, newnode);
+    } else if (priority == M) {
+      insert_tail(second, newnode);
+    } else if (priority == L) {
+      insert_tail(third, newnode);
     }
     
   } else {
