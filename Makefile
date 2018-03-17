@@ -1,7 +1,10 @@
 CC = gcc
 FLAGS = -Wall -fpic -g
 
-all: test1 test2 ktjoin tsjfo
+all: test1 test2 ktjoin tsjfo t128
+
+t128 : test_128_threads.c libuserthread.so
+	$(CC) -o t128 test_128_threads.c -L. -luserthread
 
 tsjfo: test_sjf_order.c libuserthread.so
 	$(CC) -o tsjfo test_sjf_order.c -L. -luserthread
@@ -22,4 +25,4 @@ userthread.o: userthread.c userthread.h pqueue.c pqueue.h tnode.c tnode.h
 	$(CC) $(FLAGS) -c userthread.c pqueue.c tnode.c
 
 clean:
-	rm *.o libuserthread.so test1 test2 ktjoin tsjfo
+	rm *.o libuserthread.so test1 test2 ktjoin tsjfo t128

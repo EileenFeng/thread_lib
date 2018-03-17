@@ -465,8 +465,8 @@ int thread_join(int tid) {
       }
       if(target == NULL) {
 	return FAIL;
-      } else if(target->td->state != CREATED) {
-	return FAIL;
+      } else if(target->td->state == FINISHED) {
+	return SUCCESS;
       }
       if(target->td->wait_index < 0) {
 	target->td->wait_index = 0;
