@@ -217,12 +217,6 @@ static void scheduler(int policy, int insert_sus) {
 	tnode* tempnode = head; // after update need to rearrange the order of the queue
 	if(policy == SJF) {
 	  arrange_queue(sjf_queue, tempnode);
-	  /*	  tnode* temp = get_head(sjf_queue);                                                       
-		  for(int i = 0; i < get_size(sjf_queue); i++) {                                           
-		  printf("tid and priority %d    %f\n", temp->td->tid, temp->td->priority);              
-		  temp = temp->next;                                                                     
-		  }
-	  */   
 	}
 	head->td->state = FINISHED;
 	//puts to either the suspended queue or the end of queue
