@@ -403,20 +403,29 @@ static void scheduler(int policy, int insert_sus) {
         curtime = calculate_time(t, begintime);
         logfile(curtime, "FINISHED", head->td->tid, head->td->priority);
         printf("++==++==++==FFFFFFFFFFFFFFFFFFFFfinished %d\n", head->td->tid);
-        //puts waiting threads onto ready queue
-        int temp_index = head->td->wait_index;
+
+	if(policy == FIFO) {
+	  pop_head(fifo_queue);
+	} else if (policy == SJF) {
+	  pop_head(sjf_queue);
+	}
+	head->next = NULL;
+	//puts waiting threads onto ready queue
+	int temp_index = head->td->wait_index;
         if(temp_index >= 0) {
           for(int i = 0; i <= temp_index; i++) {
 	    tnode* findnode = find_tid(sus_queue, head->td->wait_tids[i]);
 	    if(findnode != NULL) {
 	      if(findnode->td->state == STOPPED) {
-		thrd* newthread = copy_thread(findnode->td);
-		tnode* find = new_tnode(newthread, NULL);
-		find->td->state = CREATED;
+		//		thrd* newthread = copy_thread(findnode->td);
+		//tnode* find = new_tnode(newthread, NULL);
+		pop_node(sus_queue, findnode);
+		findnode->td->state = CREATED;
 		if(policy == FIFO) {
-		  insert_tail(fifo_queue, find);
+		  insert_tail(fifo_queue, findnode);
 		} else if(policy == SJF) {
-		  insert(sjf_queue, find);
+		  insert(sjf_queue, findnode);
+		  //delete_head(sjf_queue);
 		}
 	      } else {
 		printf("!!!!!!!!!!!!!!!!!!!!!!! error!!! stuff in suspended queue has wrong state %d!\n", findnode->td->state);
@@ -426,7 +435,11 @@ static void scheduler(int policy, int insert_sus) {
 	    }
 	  }
 	}
-	
+       
+	//	printf("head of the queue is %d\n", get_head(fifo_queue)->td->tid);
+	//pop_head(fifo_queue);
+	free_tnode(head);
+	head = NULL;
       } else if (head->td->state == STOPPED) {
 	// log the file
 	gettimeofday(&t, NULL);
@@ -441,39 +454,60 @@ static void scheduler(int policy, int insert_sus) {
 	total_runtime += runtime;
 	int recordtimes = 0;
 	double timesum = 0;
-	
+
 	for(int i = 0; i < RECORD_NUM; i++) {
 	  if(head->td->last_thr_run[i] >=0) {
 	    recordtimes ++;
 	    timesum += head->td->last_thr_run[i];
 	  }
 	}
+
 	double new_priority = (double)timesum/(double)recordtimes;
 	head->td->priority = new_priority;
 	tnode* tempnode = head; // after update need to rearrange the order of the queue
-	if(policy == SJF) {
+	/*
+	  if(policy == SJF) {
 	  printf("in arrange\n");
 	  arrange_queue(sjf_queue, tempnode);
 	  printf("after arrange\n");
 	}
-	head->td->state = FINISHED;
+	*/
+	//head->td->state = FINISHED;
 	//puts to either the suspended queue or the end of queue
-	thrd* newthread = copy_thread(head->td);
-	tnode* newnode = new_tnode(newthread, NULL);
-	newnode->td->state = STOPPED;
+	//	thrd* newthread = copy_thread(head->td);
+	//tnode* newnode = new_tnode(newthread, NULL);
+
+	if(policy == FIFO) {
+	  //	  printf()
+	  // pop_node(fifo_queue, head);
+
+	  pop_head(fifo_queue);
+
+	} else if(policy == SJF) {
+	  //	  pop_node(sjf_queue, head);
+	  pop_head(sjf_queue);
+	}
+	head->next = NULL;
+	//newnode->td->state = STOPPED;
 	if(insert_sus == TRUE) {
-	  insert_tail(sus_queue, newnode);
+	  insert_tail(sus_queue, head);
 	} else {
 	  if(policy == FIFO) {
-	    insert_tail(fifo_queue, newnode);
+	    insert_tail(fifo_queue, head);
 	  } else if (policy == SJF) {
-	    insert(sjf_queue, newnode);
+	    insert(sjf_queue, head);
 	  }
 	}
       }
-
+    
       //swap to next context
-      head = head->next;
+      if(policy == FIFO) {
+	head = get_head(fifo_queue);
+      } else if(policy == SJF) {
+	head = get_head(sjf_queue);
+      }
+
+      //      head = head->next;
       // when the next head is NULL
       if(head != NULL) {
 	if(head->td->state == FINISHED) {
@@ -720,8 +754,14 @@ int thread_join(int tid) {
       tnode* target;
       if(schedule_policy == FIFO) {
         target = find_tid(fifo_queue, tid);
+	if(target == NULL) {
+	  target = find_tid(sus_queue, tid);
+	}
       } else if(schedule_policy == SJF) {
         target = find_tid(sjf_queue, tid);
+	if(target == NULL) {
+	  target = find_tid(sus_queue, tid);
+	}
       }
       if(target == NULL) {
         return FAIL;
@@ -738,6 +778,21 @@ int thread_join(int tid) {
         target->td->wait_tids = realloc(target->td->wait_tids, sizeof(int) * target->td->wait_size);
       }
       target->td->wait_tids[target->td->wait_index] = head->td->tid;
+      printf("%d jjjjjjoined %d\n", head->td->tid, tid);
+      tnode* temp = get_head(fifo_queue);
+      printf("in join the fifo queue\n");
+      while(temp != NULL) {
+	printf("tid %d\n", temp->td->tid);
+	temp = temp->next;
+      }
+      printf("and the sus: \n");
+      tnode* haha = get_head(sus_queue);
+      while(haha != NULL) {
+	printf("sus: %d\n", haha->td->tid);
+	haha = haha->next;
+      }
+     
+      
       head->td->state = STOPPED;
       makecontext(schedule, (void (*)(void))scheduler, 2, FIFO, TRUE);
       gettimeofday(head->td->start, NULL);
@@ -746,6 +801,9 @@ int thread_join(int tid) {
     } else if(schedule_policy == PRIORITY) {
       sigprocmask(SIG_BLOCK, &blocked, NULL);
       tnode* target = find_priority(tid);
+      if(target == NULL) {
+	target = find_tid(sus_queue, tid);
+      }
       if(target == NULL) {
         return FAIL;
       } else if(target->td->state == FINISHED) {
