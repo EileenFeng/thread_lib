@@ -88,7 +88,7 @@ static void free_node(tnode* tn) {
   free(tn);
 }
 
-extern thrd* (*new_thread) (int, ucontext_t*) = &new_thrd;
-extern tnode* (*new_tnode) (thrd*, tnode*) = &new_node;
-extern void (*free_tnode) (tnode*) = &free_node;
-extern thrd* (*copy_thread) (thrd*) = &copythread;
+thrd* (*new_thread) (int, ucontext_t*) = &new_thrd;
+tnode* (*new_tnode) (thrd*, tnode*) = &new_node;
+void (*free_tnode) (tnode*) = &free_node;
+thrd* (*copy_thread) (thrd*) = &copythread;

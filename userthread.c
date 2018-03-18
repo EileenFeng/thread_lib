@@ -85,7 +85,7 @@ static pqueue sus_queue = NULL; //suspended threads b/c joining threads
 /************************ function prototypes *****************************/
 static void scheduler(int policy, int insert_sus);
 static void stubfunc(void (*func)(void *), void *arg);
-static void log_file(double time, const char* state, int tid, int priority);
+static void logfile(double time, const char* state, int tid, int priority);
 static double calculate_time(struct timeval end, struct timeval begin);
 static void sig_handler(int);
 // adding and deleting node from priority queue
@@ -237,16 +237,16 @@ static void sig_handler(int signal){
   sigprocmask(SIG_BLOCK, &blocked, NULL);  
   printf("sighandler&&&&&&&&&&&&&&&&&&& calls %d\n", head->td->tid);
   //  setitimer(ITIMER_REAL, &timer, NULL);
-  makecontext(schedule, (void (*) (void*))scheduler, 2, schedule_policy, FALSE);
+  makecontext(schedule, (void (*) (void))scheduler, 2, schedule_policy, FALSE);
   //  sigprocmask(SIG_BLOCK, &blocked, NULL);
   swapcontext(head->td->uc, schedule);
 }
 
-static void log_file(double runtime, const char* state, int tid, int priority) {
+static void logfile(double runtime, const char* state, int tid, int priority) {
   fprintf(stream, "[%f]\t%s\t%d\t%d\n", runtime, state, tid, priority);
 }
 
-double (*logfile) (double, char*, int, int) = &log_file;
+//void (*logfile) (double, char*, int, int) = &log_file;
 
 
 static double calculate_time(struct timeval end, struct timeval begin) {
@@ -275,7 +275,7 @@ static void stubfunc(void (*func)(void *), void *arg) {
     head->td->last_thr_run[temp] = runtime;
     head->td->index = (temp + 1) % RECORD_NUM;
     //make context for schedule context -> yes need to update insert_sus and arguments passed in
-    makecontext(schedule, (void (*) (void*))scheduler, 2, schedule_policy, FALSE);
+    makecontext(schedule, (void (*) (void))scheduler, 2, schedule_policy, FALSE);
     swapcontext(head->td->uc, schedule);
 
   } else if(schedule_policy == PRIORITY) {
@@ -289,7 +289,7 @@ static void stubfunc(void (*func)(void *), void *arg) {
     sigprocmask(SIG_BLOCK, &blocked, NULL);
     head->td->state = FINISHED;
     //sigprocmask(SIG_UNBLOCK, &blocked, NULL);
-    makecontext(schedule, (void (*)(void*))scheduler, 2, PRIORITY, FALSE);
+    makecontext(schedule, (void (*)(void))scheduler, 2, PRIORITY, FALSE);
     swapcontext(head->td->uc, schedule);
   }
 
@@ -479,7 +479,7 @@ Segmentation fault (core dumped)
         if(findnode->td->state == STOPPED) {
           thrd* newthread = copy_thread(findnode->td);
           tnode* find = new_tnode(newthread, NULL);
-          find->td->state == CREATED;
+          find->td->state = CREATED;
           if(policy == FIFO) {
             insert_tail(fifo_queue, find);
           } else if(policy == SJF) {
@@ -689,7 +689,7 @@ int thread_libterminate(void)
     free_queue(fifo_queue);
   } else if(schedule_policy == SJF) {
     tnode* temp = get_head(sjf_queue);
-    printf("queue size is %d   %d\n", get_size(sjf_queue));
+    printf("queue size is %d\n", get_size(sjf_queue));
     while(temp!= NULL) {
       printf("tid %d state %d priority %f\n", temp->td->tid, temp->td->state, temp->td->priority);
       temp = temp->next;
@@ -796,7 +796,7 @@ int thread_join(int tid) {
     mainthread->state = STOPPED;
     mainthread->wait_index = 0;
     mainthread->wait_tids[mainthread->wait_index] = tid;
-    makecontext(schedule, scheduler, 2, FIFO, FALSE);
+    makecontext(schedule, (void (*)(void))scheduler, 2, FIFO, FALSE);
     swapcontext(maincontext, schedule);
   } else {
     // wait_tid incremented before adding new stuff, thus the current tid will always points to some tid
@@ -872,7 +872,7 @@ if(schedule_policy == PRIORITY) {
   head->td->state = STOPPED;
 }
 printf("tid %d yield\n", head->td->tid);
-makecontext(schedule, scheduler, 2, schedule_policy, FALSE);
+ makecontext(schedule, (void (*) (void))scheduler, 2, schedule_policy, FALSE);
 
 swapcontext(head->td->uc, schedule);
 return SUCCESS;

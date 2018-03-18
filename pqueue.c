@@ -217,7 +217,7 @@ static tnode* findtid(pqueue pq, int tid) {
   return thead;
 }
 
-
+/*
 extern pqueue (*new_queue)() = &new_q;
 extern tnode* (*get_head) (pqueue) = &getHead;
 extern int (*get_size) (pqueue) = &getsize;
@@ -231,3 +231,18 @@ extern void (*delete_head) (pqueue) = &deletehead;
 extern tnode* (*find_tid) (pqueue, int) = &findtid;
 extern void (*move_head) (pqueue, pqueue) = &movehead_finished;
 extern void (*arrange_queue) (pqueue, tnode*) = &arrange;
+*/
+pqueue (*new_queue)() = &new_q;                                                       
+tnode* (*get_head) (pqueue) = &getHead;                                               
+int (*get_size) (pqueue) = &getsize;                                                  
+void (*insert) (pqueue, tnode*) = &insert_node;                                       
+void (*insert_tail) (pqueue, tnode*) = &add_tail;                                     
+void (*remove_node) (pqueue, int) = &remove_n;                                        
+void (*free_queue) (pqueue) = &free_list;                                             
+void (*insert_after) (pqueue, tnode*, tnode*) = &insertafter;                         
+void (*pop_head) (pqueue) = &pophead;                                                 
+void (*delete_head) (pqueue) = &deletehead;                                           
+tnode* (*find_tid) (pqueue, int) = &findtid;                                          
+void (*move_head) (pqueue, pqueue) = &movehead_finished;                              
+void (*arrange_queue) (pqueue, tnode*) = &arrange; 
+
