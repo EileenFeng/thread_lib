@@ -449,7 +449,6 @@ static void scheduler(int policy, int insert_sus) {
 	swapcontext(schedule, head->td->uc);
       } else {
 	firstthread = TRUE;
-	printf("head is null switched back to maincontext\n");
 	swapcontext(schedule, maincontext);
       }
     } // end of fifo and sjf
@@ -481,7 +480,6 @@ int thread_libinit(int policy)
   maincontext->uc_link = NULL;
   mainthread->tid = MAINTID;
   mainthread->state = SCHEDULED;
-  printf("creting for main\n");
   mainnode = new_tnode(mainthread, NULL);
 
   void* sta;
@@ -513,7 +511,6 @@ int thread_libinit(int policy)
     return FAIL;
   }
 
-  // initilize queues
   if(policy == FIFO) {
     fifo_queue = new_queue();
     if(fifo_queue == NULL) {
@@ -705,7 +702,6 @@ int thread_join(int tid) {
       swapcontext(head->td->uc, schedule);
       return TRUE;
     } else if(schedule_policy == PRIORITY) {
-      printf("JJJJJJJ join %d is joinging %d\n", head->td->tid, tid);
       sigprocmask(SIG_BLOCK, &blocked, NULL);
       tnode* target = find_priority(tid);
       if(target == NULL) {
