@@ -33,7 +33,4 @@ extern thrd* (*new_thread) (int, ucontext_t*);
 extern tnode* (*new_tnode) (thrd*, tnode*);
 
 extern void (*free_tnode) (tnode*);
-
-extern thrd* (*copy_thread) (thrd*);
-
 #endif

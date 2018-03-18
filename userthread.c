@@ -246,9 +246,7 @@ static void scheduler(int policy, int insert_sus) {
           head = get_head(sjf_queue);
         }
         if(head == NULL) {
-	  // delete
-	  printf("no threads available in ready queue yet switch back to main context\n");
-          swapcontext(schedule, maincontext);
+	  swapcontext(schedule, maincontext);
         } else {
           if(head->td->state == CREATED) {
             head->td->state = SCHEDULED;
@@ -264,8 +262,7 @@ static void scheduler(int policy, int insert_sus) {
             printf("BBBBBBBBBBBBBBBBB Begin with %d\n", head->td->tid);
             swapcontext(schedule, head->td->uc);
           } else {
-            printf("In scheduler first threads in queue is running or stopped or terminated back to main context\n");
-            swapcontext(schedule, maincontext);
+	    swapcontext(schedule, maincontext);
           }
         }
 
@@ -308,15 +305,10 @@ static void scheduler(int policy, int insert_sus) {
         int temp_index = head->td->wait_index;
         if(temp_index >= 0) {
           for(int i = 0; i <= temp_index; i++) {
-	    //            tnode* findnode = find_tid(sus_queue, head->td->wait_tids[i]);
 	    tnode* find = find_tid(sus_queue, head->td->wait_tids[i]);
-	    printf("???\n");
 	    pop_node(sus_queue, find);
-	    printf("after ???\n");
-            if(find != NULL) {
+	    if(find != NULL) {
               if(find->td->state == STOPPED) {
-		//                thrd* newthread = copy_thread(findnode->td);
-		//                tnode* find = new_tnode(newthread, NULL);
                 find->td->state = CREATED;
                 add_priority(find);
               } else {
@@ -336,15 +328,7 @@ static void scheduler(int policy, int insert_sus) {
         logfile(curtime, "FINISHED", oldtid, oldprio);
       } else if(head->td->state == SCHEDULED){
         // get stopped by signal handler, running time exceeds quanta
-	/*
-	head->td->state = FINISHED;
-        thrd* newthread = copy_thread(head->td);
-        tnode* newnode = new_tnode(newthread, NULL);
-	newnode->td->state = STOPPED;
-        add_priority(newnode);
-	*/
 	head->td->state = STOPPED;
-	//arrange_priority(head);
 	pop_priority(head);
 	oldtid = head->td->tid;
         oldprio = head->td->priority;
@@ -356,17 +340,6 @@ static void scheduler(int policy, int insert_sus) {
       } else if(head->td->state == STOPPED) {
         oldtid = head->td->tid;
         oldprio = head->td->priority;
-	/*       
-	thrd* newthread = copy_thread(head->td);
-        tnode* newnode = new_tnode(newthread, NULL);
-	head->td->state = FINISHED;
-	
-        if(insert_sus == TRUE) {
-          insert_tail(sus_queue, newnode);
-        } else {
-          add_priority(newnode);
-        }
-	*/
 	if(insert_sus == TRUE) {
 	  pop_priority(head);
 	  insert_tail(sus_queue, head);
@@ -417,15 +390,12 @@ static void scheduler(int policy, int insert_sus) {
 	    tnode* findnode = find_tid(sus_queue, head->td->wait_tids[i]);
 	    if(findnode != NULL) {
 	      if(findnode->td->state == STOPPED) {
-		//		thrd* newthread = copy_thread(findnode->td);
-		//tnode* find = new_tnode(newthread, NULL);
 		pop_node(sus_queue, findnode);
 		findnode->td->state = CREATED;
 		if(policy == FIFO) {
 		  insert_tail(fifo_queue, findnode);
 		} else if(policy == SJF) {
 		  insert(sjf_queue, findnode);
-		  //delete_head(sjf_queue);
 		}
 	      } else {
 		printf("!!!!!!!!!!!!!!!!!!!!!!! error!!! stuff in suspended queue has wrong state %d!\n", findnode->td->state);
@@ -436,8 +406,6 @@ static void scheduler(int policy, int insert_sus) {
 	  }
 	}
        
-	//	printf("head of the queue is %d\n", get_head(fifo_queue)->td->tid);
-	//pop_head(fifo_queue);
 	free_tnode(head);
 	head = NULL;
       } else if (head->td->state == STOPPED) {
@@ -465,30 +433,12 @@ static void scheduler(int policy, int insert_sus) {
 	double new_priority = (double)timesum/(double)recordtimes;
 	head->td->priority = new_priority;
 	tnode* tempnode = head; // after update need to rearrange the order of the queue
-	/*
-	  if(policy == SJF) {
-	  printf("in arrange\n");
-	  arrange_queue(sjf_queue, tempnode);
-	  printf("after arrange\n");
-	}
-	*/
-	//head->td->state = FINISHED;
-	//puts to either the suspended queue or the end of queue
-	//	thrd* newthread = copy_thread(head->td);
-	//tnode* newnode = new_tnode(newthread, NULL);
-
 	if(policy == FIFO) {
-	  //	  printf()
-	  // pop_node(fifo_queue, head);
-
 	  pop_head(fifo_queue);
-
 	} else if(policy == SJF) {
-	  //	  pop_node(sjf_queue, head);
 	  pop_head(sjf_queue);
 	}
 	head->next = NULL;
-	//newnode->td->state = STOPPED;
 	if(insert_sus == TRUE) {
 	  insert_tail(sus_queue, head);
 	} else {
@@ -499,16 +449,11 @@ static void scheduler(int policy, int insert_sus) {
 	  }
 	}
       }
-    
-      //swap to next context
       if(policy == FIFO) {
 	head = get_head(fifo_queue);
       } else if(policy == SJF) {
 	head = get_head(sjf_queue);
       }
-
-      //      head = head->next;
-      // when the next head is NULL
       if(head != NULL) {
 	if(head->td->state == FINISHED) {
 	  head = head->next;

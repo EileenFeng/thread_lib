@@ -30,37 +30,6 @@ thrd* new_thrd(int tid, ucontext_t* uc) {
   return td;
 }
 
-static thrd* copythread(thrd* td) {
-  thrd* newthread = malloc(sizeof(thrd));
-  if(newthread == NULL) { return NULL; }
-  newthread->uc = malloc(sizeof(ucontext_t));
-  memcpy(newthread->uc, td->uc, sizeof(ucontext_t));
-  void* s = malloc(STACKSIZE);
-  newthread->uc->uc_stack.ss_sp = s;
-  newthread->uc->uc_stack.ss_size = STACKSIZE;
-  newthread->valgrindid = VALGRIND_STACK_REGISTER(s, s+STACKSIZE);    
-  memcpy(newthread->uc->uc_stack.ss_sp, td->uc->uc_stack.ss_sp, STACKSIZE);
-
-  //newthread->uc = td->uc;
-  newthread->tid = td->tid;
-  newthread->state = td->state;
-  newthread->priority = td->priority;
-  newthread->last_run = td->last_run;
-  newthread->index = td->index;
-  newthread->wait_size = td->wait_size;
-  newthread->wait_index = td->wait_index;
-
-  newthread->wait_tids = malloc(sizeof(int) * td->wait_size);
-  newthread->start = malloc(sizeof(struct timeval));
-  memcpy(newthread->start, td->start, sizeof(struct timeval));
-  memcpy(newthread->wait_tids, td->wait_tids, sizeof(int) * td->wait_size);
-
-   for(int i = 0; i < td->index; i++) {
-    newthread->last_thr_run[i] = td->last_thr_run[i];
-  }
-  return newthread;
-}
-
 static tnode* new_node(thrd* td, tnode* next) {
   count++;
   tnode* tn = (tnode*)malloc(sizeof(tnode));
@@ -97,4 +66,3 @@ static void free_node(tnode* tn) {
 thrd* (*new_thread) (int, ucontext_t*) = &new_thrd;
 tnode* (*new_tnode) (thrd*, tnode*) = &new_node;
 void (*free_tnode) (tnode*) = &free_node;
-thrd* (*copy_thread) (thrd*) = &copythread;
