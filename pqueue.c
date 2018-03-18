@@ -183,6 +183,7 @@ static void pophead(pqueue pq) {
 }
 
 static void deletehead(pqueue pq) {
+  printf("queue size %d\n", pq->size);
   if(pq->size != 0) {
     printf("inside of deletehead deleting %d with priority %f\n", pq->head->td->tid, pq->head->td->priority);
     tnode* oldhead = pq->head;

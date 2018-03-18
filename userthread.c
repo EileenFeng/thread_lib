@@ -65,6 +65,10 @@ static tnode* head = NULL; //points to the current running thread in the queue
 static thrd* mainthread = NULL;
 static tnode* mainnode = NULL;
 
+static tnode* hhead;
+static tnode* mhead;
+static tnode* lhead;
+
 static int countH;
 static int countM;
 static int countL;
@@ -87,6 +91,7 @@ static void delete_priority(tnode*);
 static tnode* find_priority(int);
 static void get_next_run();
 
+/*
 static void get_next_run() {
   head = NULL;
   if(countH < HNUM) {
@@ -129,6 +134,83 @@ static void get_next_run() {
       head = NULL;
     } else {
       countL ++;
+    }
+  }
+}
+*/
+
+static void get_next_run() {
+  head = NULL;
+  if(countH < HNUM) {
+    if(countH == 0) {
+      hhead = get_head(first);
+      // if(hhead != NULL) {
+      //   head = hhead;
+      // }
+    }
+    if(hhead != NULL) {
+      head = hhead;
+      countH ++;
+      hhead = hhead->next;
+    } else {
+      if(countM < MNUM) {
+        if(countM == 0) {
+          mhead = get_head(second);
+        }
+        if(mhead != NULL) {
+          head = mhead;
+          countM ++;
+          mhead = mhead->next;
+        } else {
+          if(countL < LNUM) {
+            if(countL == 0) {
+              lhead = get_head(second);
+              if(lhead != NULL) {
+                head = lhead;
+                lhead = lhead->next;
+                countL++;
+              } else {
+                printf("no threads availabe priority\n");
+              }
+            }
+          }
+        }
+      }
+    }
+
+  } else if (countM < MNUM) {
+    if(countM == 0) {
+      mhead = get_head(second);
+    }
+    if(mhead != NULL) {
+      head = mhead;
+      countM ++;
+      mhead = mhead->next;
+    } else {
+      if(countL < LNUM) {
+        if(countL == 0) {
+          lhead = get_head(second);
+          if(lhead != NULL) {
+            head = lhead;
+            lhead = lhead->next;
+            countL++;
+          } else {
+            printf("no threads availabe priority\n");
+          }
+        }
+      }
+
+    }
+  } else if(countL < LNUM) {
+    if(countL == 0) {
+      lhead = get_head(second);
+      if(lhead != NULL) {
+        head = lhead;
+        lhead = lhead->next;
+        countL++;
+      } else {
+        printf("no threads availabe priority\n");
+      }
     }
   }
 }
@@ -345,7 +427,7 @@ static void scheduler(int policy, int insert_sus) {
         oldtid = head->td->tid;
         oldprio = head->td->priority;
         printf("10\n");
-        delete_priority(head);
+      //  delete_priority(head);
         printf("3\n");
         sigprocmask(SIG_UNBLOCK, &blocked, NULL);
         gettimeofday(&t, NULL);
@@ -360,7 +442,7 @@ static void scheduler(int policy, int insert_sus) {
         add_priority(newnode);
         oldtid = head->td->tid;
         oldprio = head->td->priority;
-        delete_priority(head);
+        //delete_priority(head);
         sigprocmask(SIG_UNBLOCK, &blocked, NULL);
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
@@ -376,7 +458,7 @@ static void scheduler(int policy, int insert_sus) {
         } else {
           add_priority(newnode);
         }
-        delete_priority(head);
+        //delete_priority(head);
         sigprocmask(SIG_UNBLOCK, &blocked, NULL);
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
