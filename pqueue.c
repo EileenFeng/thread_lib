@@ -72,7 +72,7 @@ static void arrange(pqueue pq, tnode* target) {
   tnode* pre = NULL;
   tnode* cur = NULL;
   tnode* nex = NULL;
-  cur = pq->head;
+  cur = get_head(pq);
   while(cur != NULL && cur->td->tid != target->td->tid) {
     pre = cur;
     cur = nex;
@@ -85,11 +85,13 @@ static void arrange(pqueue pq, tnode* target) {
   if(cur == NULL) {
     return;
   } else {
+    nex = cur->next;
     if(pre != NULL) {
       pre->next = nex;
     } else {
       pq->head = nex;
     }
+    pq->size --;
     insert_node(pq, target);
   }
 }
@@ -222,60 +224,3 @@ extern void (*delete_head) (pqueue) = &deletehead;
 extern tnode* (*find_tid) (pqueue, int) = &findtid;
 extern void (*move_head) (pqueue, pqueue) = &movehead_finished;
 extern void (*arrange_queue) (pqueue, tnode*) = &arrange;
-/*
-void hello() {
-  printf("haha1 \n");
-}
-
-
-void hello2() {
-  printf("haha2 \n");
-}
-
-
-int main() {
-
-  printf("2");
-  ucontext_t uc;
-  void* stack = malloc(2048);
-  uc.uc_stack.ss_sp = stack;
-  uc.uc_stack.ss_size = 2048;
-  uc.uc_stack.ss_flags = SS_DISABLE;
-  getcontext(&uc);
-  makecontext(&uc, hello, 0);
-  printf("3");
-  thrd* td = new_thrd(0, uc);
-  td->priority = -1;
-  td->tid = 0;
-  printf("4");
-  tnode* tn = new_node(td, NULL);
-
-
-  ucontext_t uc1;
-  void* stack1 = malloc(2048);
-  uc1.uc_stack.ss_sp = stack1;
-  uc1.uc_stack.ss_size = 2048;
-  uc1.uc_stack.ss_flags = SS_DISABLE;
-  getcontext(&uc1);
-  makecontext(&uc1, hello2, 0);
-  printf("32");
-  thrd* td1 = new_thrd(0, uc1);
-  td1->tid = 1;
-  td1->priority = 2;
-  printf("42");
-  tnode* tn1 = new_node(td1, NULL);
-
-
-  pqueue newq = new_queue();
-  insert(newq, tn1);
-  insert(newq, tn);
-  printf("head priority is: %d\n", newq->head->td->priority);
-  printf("next priority is: %d\n", newq->head->next->td->priority);
-  remove_node(newq, 3);
-  remove_node(newq, 1);
-  printf("hahha head priority is: %d\n", newq->head->td->priority);
-  //printf("next priority is: %d\n", newq->head->next->td->priority);
-  free_list(newq);
-  printf("before free\n");
-}
-*/
