@@ -352,7 +352,7 @@ static void scheduler(int policy, int insert_sus) {
             }
             head->td->wait_tids[head->td->wait_index] = MAINTID;
             gettimeofday(head->td->start, NULL);
-            //printf("BBBBBBBBBBBBBBBBB Begin with %d\n", head->td->tid);
+            printf("BBBBBBBBBBBBBBBBB Begin with %d\n", head->td->tid);
             swapcontext(schedule, head->td->uc);
           } else {
             printf("In scheduler first threads in queue is running or stopped or terminated back to main context\n");
