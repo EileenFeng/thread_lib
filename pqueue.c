@@ -62,6 +62,39 @@ static void insert_node(pqueue pq, tnode* tn) {
   return;
 }
 
+static tnode* popnode(pqueue pq, tnode* target) {
+  if(pq->size == 0) {
+    return NULL;
+  }
+  tnode* pre = NULL;
+  tnode* cur = NULL;
+  tnode* nex = NULL;
+  cur = get_head(pq);
+  while(cur != NULL && cur->td->tid != target->td->tid) {
+    pre = cur;
+    cur = nex;
+    if(cur != NULL) {
+      nex = cur->next;
+    } else {
+      nex = NULL;
+    }
+  }
+  if(cur == NULL) {
+    return NULL;
+  } else {
+    nex = cur->next;
+    if(pre != NULL) {
+      pre->next = nex;
+    } else {
+      pq->head = nex;
+    }
+    pq->size --;
+    return cur;
+    //    pq->size --;
+    //insert_node(pq, target);
+  }  
+}
+
 static void arrange(pqueue pq, tnode* target) {
   tnode* curhead = get_head(pq);
   if(curhead->td->tid == target->td->tid) {
@@ -208,7 +241,6 @@ static tnode* findtid(pqueue pq, int tid) {
   return thead;
 }
 
-
 pqueue (*new_queue)() = &new_q;                                                       
 tnode* (*get_head) (pqueue) = &getHead;                                               
 int (*get_size) (pqueue) = &getsize;                                                  
@@ -223,3 +255,4 @@ tnode* (*find_tid) (pqueue, int) = &findtid;
 void (*move_head) (pqueue, pqueue) = &movehead_finished;                              
 void (*arrange_queue) (pqueue, tnode*) = &arrange; 
 
+tnode* (*pop_node) (pqueue, tnode*) = &popnode;

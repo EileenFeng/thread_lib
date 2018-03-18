@@ -94,9 +94,31 @@ static void sig_handler(int);
 static void add_priority(tnode*);
 static tnode* find_priority(int);
 static void get_next_run();
-
+static void arrange_priority(tnode*);
+static void pop_priority();
 
 /************************** FUNCTIONS *********************************/
+
+static void arrange_priority(tnode* n) {
+  if(n->td->priority == H) {
+    arrange_queue(first, n);
+  } else if(n->td->priority == M) {
+    arrange_queue(second, n);
+  } else if(n->td->priority == L) {
+    arrange_queue(third, n);
+  }
+}
+
+static void pop_priority() {
+  //  tnode* result = NULL;
+  if(head->td->priority == H) {
+    pop_head(first);
+  } else if (head->td->priority == M) {
+    pop_head(second);
+  } else if(head->td->priority == L) {
+    pop_head(third);
+  }
+}
 
 static void get_next_run() {
   int priority;
@@ -146,7 +168,7 @@ static tnode* find_priority(int tid) {
   result = find_tid(second, tid);
   if(result != NULL) {
     return result;
-  }
+  } 
   result = find_tid(third, tid);
   if(result != NULL) {
     return result;
@@ -286,15 +308,19 @@ static void scheduler(int policy, int insert_sus) {
         int temp_index = head->td->wait_index;
         if(temp_index >= 0) {
           for(int i = 0; i <= temp_index; i++) {
-            tnode* findnode = find_tid(sus_queue, head->td->wait_tids[i]);
-            if(findnode != NULL) {
-              if(findnode->td->state == STOPPED) {
-                thrd* newthread = copy_thread(findnode->td);
-                tnode* find = new_tnode(newthread, NULL);
+	    //            tnode* findnode = find_tid(sus_queue, head->td->wait_tids[i]);
+	    tnode* find = find_tid(sus_queue, head->td->wait_tids[i]);
+	    printf("???\n");
+	    pop_node(sus_queue, find);
+	    printf("after ???\n");
+            if(find != NULL) {
+              if(find->td->state == STOPPED) {
+		//                thrd* newthread = copy_thread(findnode->td);
+		//                tnode* find = new_tnode(newthread, NULL);
                 find->td->state = CREATED;
                 add_priority(find);
               } else {
-                printf("!!!!!!!!!!!!! priority !!!!!!!!!!!!!!!!! stuff in suspended queue has wrong state %d\n", findnode->td->state);
+                printf("!!!!!!!!!!!!! priority !!!!!!!!!!!!!!!!! stuff in suspended queue has wrong state %d\n", find->td->state);
               }
             } else {
               printf("Thread %d not found in the suspended queue\n", head->td->wait_tids[i]);
@@ -310,13 +336,19 @@ static void scheduler(int policy, int insert_sus) {
         logfile(curtime, "FINISHED", oldtid, oldprio);
       } else if(head->td->state == SCHEDULED){
         // get stopped by signal handler, running time exceeds quanta
-        head->td->state = FINISHED;
+	/*
+	head->td->state = FINISHED;
         thrd* newthread = copy_thread(head->td);
         tnode* newnode = new_tnode(newthread, NULL);
 	newnode->td->state = STOPPED;
         add_priority(newnode);
-        oldtid = head->td->tid;
+	*/
+	head->td->state = STOPPED;
+	//arrange_priority(head);
+	pop_priority(head);
+	oldtid = head->td->tid;
         oldprio = head->td->priority;
+	add_priority(head);
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);
@@ -324,14 +356,24 @@ static void scheduler(int policy, int insert_sus) {
       } else if(head->td->state == STOPPED) {
         oldtid = head->td->tid;
         oldprio = head->td->priority;
-        thrd* newthread = copy_thread(head->td);
+	/*       
+	thrd* newthread = copy_thread(head->td);
         tnode* newnode = new_tnode(newthread, NULL);
 	head->td->state = FINISHED;
+	
         if(insert_sus == TRUE) {
           insert_tail(sus_queue, newnode);
         } else {
           add_priority(newnode);
         }
+	*/
+	if(insert_sus == TRUE) {
+	  pop_priority(head);
+	  insert_tail(sus_queue, head);
+	} else {
+	  pop_priority(head);
+	  add_priority(head);
+	}
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);

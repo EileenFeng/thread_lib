@@ -30,5 +30,6 @@ extern void (*move_head) (pqueue, pqueue);
 
 extern void (*arrange_queue) (pqueue, tnode*);
 
+extern tnode* (*pop_node) (pqueue, tnode*);
 
 #endif
