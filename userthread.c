@@ -144,9 +144,6 @@ static void get_next_run() {
   if(countH < HNUM) {
     if(countH == 0) {
       hhead = get_head(first);
-      // if(hhead != NULL) {
-      //   head = hhead;
-      // }
     }
     if(hhead != NULL) {
       head = hhead;
