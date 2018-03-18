@@ -1,3 +1,5 @@
+// needs to reset the three counters for priority when it's full
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -48,6 +50,7 @@ static pqueue first, second, third;
 //static timeval begintime; // records beginning time of lib init
 static struct timeval begintime;
 static struct itimerval timer; // timer for priority scheduling
+static struct itimerval store;
 
 static int lib_init = FALSE;
 static int schedule_policy = -1;    // policy of current scheduling
@@ -87,65 +90,24 @@ static double calculate_time(struct timeval end, struct timeval begin);
 static void sig_handler(int);
 // adding and deleting node from priority queue
 static void add_priority(tnode*);
-static void delete_priority(tnode*);
+static void delete_priority(tnode*); // not used so far
 static tnode* find_priority(int);
 static void get_next_run();
 
-/*
 static void get_next_run() {
   head = NULL;
+  /*
+  printf("in getnext run first size %d\n", get_size(first));
+  printf("in getnext run 2nd size %d\n", get_size(second));
+  printf("in getnext run 3rd size %d\n", get_size(third));
+  */
   if(countH < HNUM) {
-    head = get_head(first);
-    if(head == NULL) {
-      if(countM < MNUM) {
-        head = get_head(second);
-        if(head == NULL) {
-          head = get_head(third);
-          if(head == NULL) {
-            printf("no more threads available finished all running\n");
-            head = NULL;
-          } else {
-            countL ++;
-          }
-        } else {
-          countM ++;
-        }
-      }
-    } else {
-      countH ++;
-    }
-  } else if (countM < MNUM) {
-    head = get_head(second);
-    if(head == NULL) {
-      head = get_head(third);
-      if(head == NULL) {
-        printf("no more threads available finished all running\n");
-        head = NULL;
-      } else {
-        countL ++;
-      }
-    } else {
-      countM ++;
-    }
-  } else if(countL < LNUM) {
-    head = get_head(third);
-    if(head == NULL) {
-      printf("no more threads available finished all running\n");
-      head = NULL;
-    } else {
-      countL ++;
-    }
-  }
-}
-*/
-
-static void get_next_run() {
-  head = NULL;
-  if(countH < HNUM) {
+    printf("here first\n");
     if(countH == 0) {
       hhead = get_head(first);
     }
     if(hhead != NULL) {
+      printf("getfirst 1\n");
       head = hhead;
       countH ++;
       hhead = hhead->next;
@@ -155,27 +117,30 @@ static void get_next_run() {
           mhead = get_head(second);
         }
         if(mhead != NULL) {
+	  printf("get first2\n");
           head = mhead;
           countM ++;
           mhead = mhead->next;
         } else {
           if(countL < LNUM) {
             if(countL == 0) {
-              lhead = get_head(second);
-              if(lhead != NULL) {
-                head = lhead;
-                lhead = lhead->next;
-                countL++;
-              } else {
-                printf("no threads availabe priority\n");
-              }
-            }
-          }
-        }
+              lhead = get_head(third);
+	    } 
+	    if(lhead != NULL) {
+	      printf("get first 3\n");
+	      head = lhead;
+	      lhead = lhead->next;
+	      countL++;
+	    } else {
+	      printf("no threads availabe priority\n");
+	    }
+	  }
+	}
       }
     }
-
+  
   } else if (countM < MNUM) {
+    printf("here second\n");
     if(countM == 0) {
       mhead = get_head(second);
     }
@@ -199,6 +164,7 @@ static void get_next_run() {
 
     }
   } else if(countL < LNUM) {
+    printf("in here thrid\n");
     if(countL == 0) {
       lhead = get_head(second);
       if(lhead != NULL) {
@@ -267,7 +233,12 @@ static tnode* find_priority(int tid) {
 
 
 static void sig_handler(int signal){
+  ////setitimer(ITIMER_REAL, &timer, NULL);
+  sigprocmask(SIG_BLOCK, &blocked, NULL);  
+  printf("sighandler&&&&&&&&&&&&&&&&&&& calls %d\n", head->td->tid);
+  //  setitimer(ITIMER_REAL, &timer, NULL);
   makecontext(schedule, (void (*) (void*))scheduler, 2, schedule_policy, FALSE);
+  //  sigprocmask(SIG_BLOCK, &blocked, NULL);
   swapcontext(head->td->uc, schedule);
 }
 
@@ -308,9 +279,13 @@ static void stubfunc(void (*func)(void *), void *arg) {
     swapcontext(head->td->uc, schedule);
 
   } else if(schedule_policy == PRIORITY) {
-
+    // signal handler came into play here
+    ///hahahha only  here la setitimer(ITIMER_REAL, &timer, NULL);
+    ///
     setitimer(ITIMER_REAL, &timer, NULL);
+    sigprocmask(SIG_UNBLOCK, &blocked, NULL);
     func(arg);
+    //    setitimer(ITIMER_REAL, &timer, NULL);  
     sigprocmask(SIG_BLOCK, &blocked, NULL);
     head->td->state = FINISHED;
     //sigprocmask(SIG_UNBLOCK, &blocked, NULL);
@@ -364,7 +339,7 @@ static void scheduler(int policy, int insert_sus) {
         countL = 0;
         countM = 0;
 
-        sigprocmask(SIG_BLOCK, &blocked, NULL);
+        //sigprocmask(SIG_BLOCK, &blocked, NULL);
         get_next_run();
         if(head != NULL) {
           head->td->state = SCHEDULED;
@@ -372,7 +347,7 @@ static void scheduler(int policy, int insert_sus) {
             head->td->wait_index = 0;
           }
           head->td->wait_tids[head->td->wait_index] = MAINTID;
-          sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+          ///sigprocmask(SIG_UNBLOCK, &blocked, NULL);
           gettimeofday(&t, NULL);
           double curtime = calculate_time(t, begintime);
           logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
@@ -396,16 +371,11 @@ static void scheduler(int policy, int insert_sus) {
       int oldtid, oldprio;
       if(head->td->state == FINISHED) {
         printf("----Finished %d with state %d priority %f\n", head->td->tid, head->td->state, head->td->priority);
-        printf("1\n");
         int temp_index = head->td->wait_index;
-        printf("4\n");
         if(temp_index >= 0) {
           for(int i = 0; i <= temp_index; i++) {
-            printf("5\n");
             tnode* findnode = find_tid(sus_queue, head->td->wait_tids[i]);
-            printf("6\n");
             if(findnode != NULL) {
-              printf("7\n");
               if(findnode->td->state == STOPPED) {
                 thrd* newthread = copy_thread(findnode->td);
                 tnode* find = new_tnode(newthread, NULL);
@@ -418,29 +388,27 @@ static void scheduler(int policy, int insert_sus) {
               printf("Thread %d not found in the suspended queue\n", head->td->wait_tids[i]);
             }
           }
-          printf("2\n");
           head->td->wait_index = UNKNOWN;
         }
         oldtid = head->td->tid;
         oldprio = head->td->priority;
-        printf("10\n");
-      //  delete_priority(head);
-        printf("3\n");
-        sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+        ///sigprocmask(SIG_UNBLOCK, &blocked, NULL);
         gettimeofday(&t, NULL);
         double curtime;
         curtime = calculate_time(t, begintime);
         logfile(curtime, "FINISHED", oldtid, oldprio);
+	printf("now finished\n");
       } else if(head->td->state == SCHEDULED){
         // get stopped by signal handler, running time exceeds quanta
-        head->td->state = STOPPED;
+        head->td->state = FINISHED;
         thrd* newthread = copy_thread(head->td);
         tnode* newnode = new_tnode(newthread, NULL);
+	newnode->td->state = STOPPED;
         add_priority(newnode);
         oldtid = head->td->tid;
         oldprio = head->td->priority;
         //delete_priority(head);
-        sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+        ///sigprocmask(SIG_UNBLOCK, &blocked, NULL);
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);
@@ -456,17 +424,19 @@ static void scheduler(int policy, int insert_sus) {
           add_priority(newnode);
         }
         //delete_priority(head);
-        sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+        ///sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+
+
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);
       }
 
-      sigprocmask(SIG_BLOCK, &blocked, NULL);
+      ///sigprocmask(SIG_BLOCK, &blocked, NULL);
       get_next_run();
       if(head != NULL) {
         head->td->state = SCHEDULED;
-        sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+        ///sigprocmask(SIG_UNBLOCK, &blocked, NULL);
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
@@ -499,7 +469,9 @@ static void scheduler(int policy, int insert_sus) {
             insert_tail(fifo_queue, newnode);
           } else if (policy == SJF) {
           insert(sjf_queue, newnode);
-        }
+  e 1 priority 0.000000
+Segmentation fault (core dumped)
+      }
         printf("added node to fifo_queue\n");
       } else {*/
       tnode* findnode = find_tid(sus_queue, head->td->wait_tids[i]);
@@ -684,7 +656,12 @@ int thread_libinit(int policy)
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = QUANTA;
     timer.it_value.tv_sec = 0;
-    timer.it_value.tv_sec = 1;
+    timer.it_value.tv_usec = QUANTA;
+
+    store.it_interval.tv_sec = 0;
+    store.it_interval.tv_usec = QUANTA;
+    store.it_value.tv_sec = 0;
+    store.it_value.tv_usec = 0;
 
     sigemptyset(&blocked);
     sigaddset(&blocked, SIGALRM);
@@ -723,7 +700,7 @@ int thread_libterminate(void)
     free_queue(first);
     free_queue(second);
     free_queue(third);
-
+        
   }
 
   free_queue(sus_queue);
@@ -802,7 +779,6 @@ int thread_create(void (*func)(void *), void *arg, int priority)
     sigprocmask(SIG_BLOCK, &blocked, NULL);
     add_priority(newnode);
     sigprocmask(SIG_BLOCK, &blocked, NULL);
-
   } else {
     return FAIL;
   }
@@ -854,7 +830,7 @@ int thread_join(int tid) {
       swapcontext(head->td->uc, schedule);
       return TRUE;
     } else if(schedule_policy == PRIORITY) {
-      sigprocmask(SIG_BLOCK, &blocked, NULL);
+      //sigprocmask(SIG_BLOCK, &blocked, NULL);
       tnode* target = find_priority(tid);
       if(target == NULL) {
         return FAIL;
@@ -872,7 +848,7 @@ int thread_join(int tid) {
       }
       target->td->wait_tids[target->td->wait_index] = head->td->tid;
       head->td->state = STOPPED;
-      sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+      //sigprocmask(SIG_UNBLOCK, &blocked, NULL);
       makecontext(schedule, (void (*)(void))scheduler, 2, PRIORITY, TRUE);
       swapcontext(head->td->uc, schedule);
       return TRUE;
@@ -889,9 +865,9 @@ int thread_yield(void) {
 }
 */
 if(schedule_policy == PRIORITY) {
-  sigprocmask(SIG_BLOCK, &blocked, NULL);
+  //sigprocmask(SIG_BLOCK, &blocked, NULL);
   head->td->state = STOPPED;
-  sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+  //  sigprocmask(SIG_UNBLOCK, &blocked, NULL);
 } else {
   head->td->state = STOPPED;
 }
