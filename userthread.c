@@ -53,7 +53,6 @@ static pqueue first, second, third;
 //static timeval begintime; // records beginning time of lib init
 static struct timeval begintime;
 static struct itimerval timer; // timer for priority scheduling
-static struct itimerval store;
 
 static int lib_init = FALSE;
 static int schedule_policy = -1;    // policy of current scheduling
@@ -225,7 +224,8 @@ static void scheduler(int policy, int insert_sus) {
           head = get_head(sjf_queue);
         }
         if(head == NULL) {
-          printf("no threads available in ready queue yet switch back to main context\n");
+	  // delete
+	  printf("no threads available in ready queue yet switch back to main context\n");
           swapcontext(schedule, maincontext);
         } else {
           if(head->td->state == CREATED) {
@@ -253,7 +253,6 @@ static void scheduler(int policy, int insert_sus) {
         mhead = get_head(second);
         lhead = get_head(third);   
 
-        //sigprocmask(SIG_BLOCK, &blocked, NULL);
         get_next_run();
         if(head != NULL) {
           head->td->state = SCHEDULED;
@@ -261,7 +260,6 @@ static void scheduler(int policy, int insert_sus) {
             head->td->wait_index = 0;
           }
           head->td->wait_tids[head->td->wait_index] = MAINTID;
-          ///sigprocmask(SIG_UNBLOCK, &blocked, NULL);
           gettimeofday(&t, NULL);
           double curtime = calculate_time(t, begintime);
           logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
@@ -306,7 +304,6 @@ static void scheduler(int policy, int insert_sus) {
         }
         oldtid = head->td->tid;
         oldprio = head->td->priority;
-        //sigprocmask(SIG_UNBLOCK, &blocked, NULL);  //here added
         gettimeofday(&t, NULL);
         double curtime;
         curtime = calculate_time(t, begintime);
@@ -320,21 +317,17 @@ static void scheduler(int policy, int insert_sus) {
         add_priority(newnode);
         oldtid = head->td->tid;
         oldprio = head->td->priority;
-        //delete_priority(head);
-        //sigprocmask(SIG_UNBLOCK, &blocked, NULL); //here addede
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);
 
       } else if(head->td->state == STOPPED) {
-	printf("here in prioryt sTOP *******\N %d\n", head->td->tid);
         oldtid = head->td->tid;
         oldprio = head->td->priority;
         thrd* newthread = copy_thread(head->td);
         tnode* newnode = new_tnode(newthread, NULL);
 	head->td->state = FINISHED;
         if(insert_sus == TRUE) {
-	  printf("inserttttting %d\n", newnode->td->tid);
           insert_tail(sus_queue, newnode);
         } else {
           add_priority(newnode);
@@ -386,10 +379,8 @@ static void scheduler(int policy, int insert_sus) {
 	      } else {
 		printf("!!!!!!!!!!!!!!!!!!!!!!! error!!! stuff in suspended queue has wrong state %d!\n", findnode->td->state);
 	      }
-	      
 	    } else {
 	      printf("scheduelr not found in suspended queue thread tid not found is  %d\n", head->td->wait_tids[i]);
-	      
 	    }
 	  }
 	}
@@ -399,11 +390,8 @@ static void scheduler(int policy, int insert_sus) {
 	gettimeofday(&t, NULL);
 	double curtime = calculate_time(t, begintime);
 	double runtime = calculate_time(t, *(head->td->start));
-	//	gettimeofday(head->td->start, NULL);
 	logfile(curtime, "STOPPED", head->td->tid, head->td->priority);
-	printf("SSSSSSSSSSSSSSSTOP: thread %d runs for %f last time\n", head->td->tid, runtime);
 	// update the current thread's run time
-	//double runtime = calculate_time(t, *(head->td->start));
 	int temp = head->td->index;
 	head->td->last_thr_run[temp] = runtime;
 	head->td->index = (temp+1) % RECORD_NUM;
@@ -427,13 +415,9 @@ static void scheduler(int policy, int insert_sus) {
 	  printf("after arrange\n");
 	}
 	head->td->state = FINISHED;
-
 	//puts to either the suspended queue or the end of queue
-
 	thrd* newthread = copy_thread(head->td);
-	printf("heng\n");
 	tnode* newnode = new_tnode(newthread, NULL);
-	printf("head\n");
 	newnode->td->state = STOPPED;
 	if(insert_sus == TRUE) {
 	  insert_tail(sus_queue, newnode);
@@ -454,7 +438,6 @@ static void scheduler(int policy, int insert_sus) {
 	  head = head->next;
 	  if(head == NULL) {
 	    firstthread = TRUE;
-	    printf("head is null switched back to maincontext\n");
 	    swapcontext(schedule, maincontext);
 	  }
 	}
@@ -470,7 +453,6 @@ static void scheduler(int policy, int insert_sus) {
 	swapcontext(schedule, maincontext);
       }
     } // end of fifo and sjf
-
   }
 }
 
@@ -496,7 +478,6 @@ int thread_libinit(int policy)
   maincontext->uc_stack.ss_sp = stack;
   maincontext->uc_stack.ss_size = STACKSIZE;
   maincontext->uc_stack.ss_flags = SS_DISABLE;
-  //sigemptyset(&(maincontext->uc_sigmask));
   maincontext->uc_link = NULL;
   mainthread->tid = MAINTID;
   mainthread->state = SCHEDULED;
@@ -507,7 +488,6 @@ int thread_libinit(int policy)
   schedule = malloc(sizeof(ucontext_t));
   getcontext(schedule);
   sta = malloc(STACKSIZE);
-  //sta = (void *)mmap(0, STACKSIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, -1, 0);
   schedule_id = VALGRIND_STACK_REGISTER(sta, sta+STACKSIZE);
   schedule->uc_stack.ss_sp = sta;
   schedule->uc_stack.ss_size = STACKSIZE;
@@ -558,11 +538,6 @@ int thread_libinit(int policy)
     timer.it_interval.tv_usec = QUANTA;
     timer.it_value.tv_sec = 0;
     timer.it_value.tv_usec = QUANTA;
-
-    store.it_interval.tv_sec = 0;
-    store.it_interval.tv_usec = QUANTA;
-    store.it_value.tv_sec = 0;
-    store.it_value.tv_usec = 0;
 
     sigemptyset(&blocked);
     sigaddset(&blocked, SIGALRM);

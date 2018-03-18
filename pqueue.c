@@ -34,11 +34,9 @@ static void insert_node(pqueue pq, tnode* tn) {
   if(pq->size == 0) {
     pq->head = tn;
     pq->size = 1;
-    printf("r1 %d\n", pq->size);
     return;
   }
   if(tn == NULL) {
-    printf("r2\n");
     return;
   }
   tnode* thead = pq->head;
@@ -46,7 +44,6 @@ static void insert_node(pqueue pq, tnode* tn) {
     tn->next = thead;
     pq->head = tn;
     pq->size ++;
-    printf("r3\n");
     return;
   }
   while(thead->next != NULL) {
@@ -58,13 +55,10 @@ static void insert_node(pqueue pq, tnode* tn) {
       break;
     }
   }
-  printf("last tid %d\n", thead->td->tid);
   tnode* temp = thead->next;
-  printf("temp is NULL? %d\n", temp == NULL);
   thead->next = tn;
   tn->next = temp;
   pq->size++;
-  printf("r4 %d\n", pq->size);
   return;
 }
 
@@ -183,15 +177,12 @@ static void pophead(pqueue pq) {
 }
 
 static void deletehead(pqueue pq) {
-  printf("queue size %d\n", pq->size);
   if(pq->size != 0) {
-    printf("inside of deletehead deleting %d with priority %f\n", pq->head->td->tid, pq->head->td->priority);
     tnode* oldhead = pq->head;
     tnode* curnext = pq->head->next;
     free_tnode(oldhead);
     pq->head = curnext;
     pq->size --;
-    printf("inside deletehead %d\n", pq->size);
   }
 }
 
@@ -217,21 +208,7 @@ static tnode* findtid(pqueue pq, int tid) {
   return thead;
 }
 
-/*
-extern pqueue (*new_queue)() = &new_q;
-extern tnode* (*get_head) (pqueue) = &getHead;
-extern int (*get_size) (pqueue) = &getsize;
-extern void (*insert) (pqueue, tnode*) = &insert_node;
-extern void (*insert_tail) (pqueue, tnode*) = &add_tail;
-extern void (*remove_node) (pqueue, int) = &remove_n;
-extern void (*free_queue) (pqueue) = &free_list;
-extern void (*insert_after) (pqueue, tnode*, tnode*) = &insertafter;
-extern void (*pop_head) (pqueue) = &pophead;
-extern void (*delete_head) (pqueue) = &deletehead;
-extern tnode* (*find_tid) (pqueue, int) = &findtid;
-extern void (*move_head) (pqueue, pqueue) = &movehead_finished;
-extern void (*arrange_queue) (pqueue, tnode*) = &arrange;
-*/
+
 pqueue (*new_queue)() = &new_q;                                                       
 tnode* (*get_head) (pqueue) = &getHead;                                               
 int (*get_size) (pqueue) = &getsize;                                                  
