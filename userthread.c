@@ -209,7 +209,10 @@ static void stubfunc(void (*func)(void *), void *arg) {
 }
 
 static void scheduler(int policy, int insert_sus) {
-  sigprocmask(SIG_BLOCK, &blocked, NULL);
+
+  if(policy == PRIORITY) {
+    sigprocmask(SIG_BLOCK, &blocked, NULL);
+  }
   struct timeval t;
   // when head initially is NULL
   if(head == NULL) {
@@ -336,20 +339,14 @@ static void scheduler(int policy, int insert_sus) {
         } else {
           add_priority(newnode);
         }
-        //delete_priority(head);
-        //sigprocmask(SIG_UNBLOCK, &blocked, NULL);   // here added
-
-
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);
       }
 
-      //sigprocmask(SIG_BLOCK, &blocked, NULL);
       get_next_run();
       if(head != NULL) {
         head->td->state = SCHEDULED;
-        ///sigprocmask(SIG_UNBLOCK, &blocked, NULL);
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
