@@ -6,14 +6,17 @@
 #define N 6
 
 void foo(int val) {
-  poll(NULL, 0, 500);
-  
+  //  poll(NULL, 0, 20000);
+  for(int i = 0; i < 7; i++) {
+    printf("||||||||||||||ssssssssssssleeping %d  %d\n", i, val);
+    sleep(1);
+  }
   printf("looooooooooooool %d\n", val);
 }
 
 void foo2(int val) {
   //poll(NULL, 0, 1);
-  printf("foo2 %d\n", val);
+  printf("-----------------------------fffffffffffffffoo2 %d\n", val);
 }
 
 int main(void) {

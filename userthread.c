@@ -25,9 +25,10 @@
 #define H -1
 #define M 0
 #define L 1
-#define HNUM 9  // not used
-#define MNUM 6 // notused
-#define LNUM 4  // not used
+#define HNUM 9  
+#define MNUM 6 
+#define LNUM 4 
+#define TOTAL 19
 
 /****************************** globals ***********************************/
 
@@ -72,9 +73,8 @@ static tnode* hhead;
 static tnode* mhead;
 static tnode* lhead;
 
-static int countH;
-static int countM;
-static int countL;
+int turns[TOTAL];
+int counter = 0;
 
 static ucontext_t* maincontext;
 static ucontext_t* schedule;
@@ -90,127 +90,47 @@ static double calculate_time(struct timeval end, struct timeval begin);
 static void sig_handler(int);
 // adding and deleting node from priority queue
 static void add_priority(tnode*);
-static void delete_priority(tnode*); // not used so far
 static tnode* find_priority(int);
 static void get_next_run();
 
 static void get_next_run() {
-  head = NULL;
-  /*
-  printf("in getnext run first size %d\n", get_size(first));
-  printf("in getnext run 2nd size %d\n", get_size(second));
-  printf("in getnext run 3rd size %d\n", get_size(third));
-  */
-  if(countH < HNUM) {
-    printf("here first\n");
-    if(countH == 0) {
-      hhead = get_head(first);
-    }
-    if(hhead != NULL) {
-      printf("getfirst 1\n");
-      head = hhead;
-      countH ++;
-      hhead = hhead->next;
-    } else {
-      if(countM < MNUM) {
-        if(countM == 0) {
-          mhead = get_head(second);
-        }
-        if(mhead != NULL) {
-	  printf("get first2\n");
-          head = mhead;
-          countM ++;
-          mhead = mhead->next;
-        } else {
-          if(countL < LNUM) {
-            if(countL == 0) {
-              lhead = get_head(third);
-	    } 
-	    if(lhead != NULL) {
-	      printf("get first 3\n");
-	      head = lhead;
-	      lhead = lhead->next;
-	      countL++;
-	    } else {
-	      printf("no threads availabe priority\n");
-	    }
-	  }
-	}
-      }
-    }
-  
-  } else if (countM < MNUM) {
-    printf("here second\n");
-    if(countM == 0) {
-      mhead = get_head(second);
-    }
-    if(mhead != NULL) {
-      head = mhead;
-      countM ++;
-      mhead = mhead->next;
-    } else {
-      if(countL < LNUM) {
-        if(countL == 0) {
-          lhead = get_head(second);
-          if(lhead != NULL) {
-            head = lhead;
-            lhead = lhead->next;
-            countL++;
-          } else {
-            printf("no threads availabe priority\n");
-          }
-        }
-      }
-
-    }
-  } else if(countL < LNUM) {
-    printf("in here thrid\n");
-    if(countL == 0) {
-      lhead = get_head(second);
-      if(lhead != NULL) {
-        head = lhead;
-        lhead = lhead->next;
-        countL++;
-      } else {
-        printf("no threads availabe priority\n");
-      }
-    }
+  int priority;
+  if(hhead == NULL && mhead == NULL && lhead == NULL) {
+    head = NULL;
+    return;
   }
+  do {
+    priority = turns[counter];
+    if(priority == H) {
+      head = hhead;
+      if(hhead != NULL) {
+	hhead = hhead->next;
+      }
+    } else if(priority == M) {
+      head = mhead;
+      if(mhead != NULL) {
+	mhead = mhead->next;
+      }
+    } else if(priority == L) {
+      head = lhead;
+      if(lhead != NULL) {
+	lhead = lhead->next;
+      }
+    }
+    counter ++;
+    counter = counter % TOTAL;
+  } while(head == NULL);
 }
 
 static void add_priority(tnode* target) {
   if(target->td->priority == H) {
+    printf("inserting before size %d\n", get_size(first));
     insert_tail(first, target);
+    printf("after inserting %d\n", get_size(first));
   } else if(target->td->priority == M) {
     insert_tail(second, target);
   } else if(target->td->priority == L) {
     insert_tail(third, target);
-  }
-}
-
-static void delete_priority(tnode* t) {
-  if(t->td->priority == H) {
-    tnode* thead = get_head(first);
-      if(t->td->tid == thead->td->tid) {
-        delete_head(first);
-      } else {
-        printf("in delete priority not deleting head first: %d!!!!\n", t->td->tid);
-      }
-  } else if(t->td->priority == M) {
-    tnode* thead = get_head(second);
-      if(t->td->tid == thead->td->tid) {
-        delete_head(second);
-      } else {
-        printf("in delete priority not deleting head second: %d!!!!\n", t->td->tid);
-      }
-  } else if(t->td->priority == L) {
-    printf("delete low\n");
-    tnode* thead = get_head(third);
-      if(t->td->tid == thead->td->tid) {
-        delete_head(third);
-      } else {
-        printf("in delete priority not deleting head third: %d!!!!\n", t->td->tid);
-      }
   }
 }
 
@@ -233,21 +153,15 @@ static tnode* find_priority(int tid) {
 
 
 static void sig_handler(int signal){
-  ////setitimer(ITIMER_REAL, &timer, NULL);
   sigprocmask(SIG_BLOCK, &blocked, NULL);  
   printf("sighandler&&&&&&&&&&&&&&&&&&& calls %d\n", head->td->tid);
-  //  setitimer(ITIMER_REAL, &timer, NULL);
   makecontext(schedule, (void (*) (void))scheduler, 2, schedule_policy, FALSE);
-  //  sigprocmask(SIG_BLOCK, &blocked, NULL);
   swapcontext(head->td->uc, schedule);
 }
 
 static void logfile(double runtime, const char* state, int tid, int priority) {
   fprintf(stream, "[%f]\t%s\t%d\t%d\n", runtime, state, tid, priority);
 }
-
-//void (*logfile) (double, char*, int, int) = &log_file;
-
 
 static double calculate_time(struct timeval end, struct timeval begin) {
   double runtime = end.tv_sec*1000000 + end.tv_usec - begin.tv_sec*1000000 - begin.tv_usec;
@@ -274,21 +188,16 @@ static void stubfunc(void (*func)(void *), void *arg) {
     int temp = head->td->index;
     head->td->last_thr_run[temp] = runtime;
     head->td->index = (temp + 1) % RECORD_NUM;
-    //make context for schedule context -> yes need to update insert_sus and arguments passed in
     makecontext(schedule, (void (*) (void))scheduler, 2, schedule_policy, FALSE);
     swapcontext(head->td->uc, schedule);
 
   } else if(schedule_policy == PRIORITY) {
-    // signal handler came into play here
-    ///hahahha only  here la setitimer(ITIMER_REAL, &timer, NULL);
-    ///
+
     setitimer(ITIMER_REAL, &timer, NULL);
     sigprocmask(SIG_UNBLOCK, &blocked, NULL);
     func(arg);
-    //    setitimer(ITIMER_REAL, &timer, NULL);  
     sigprocmask(SIG_BLOCK, &blocked, NULL);
     head->td->state = FINISHED;
-    //sigprocmask(SIG_UNBLOCK, &blocked, NULL);
     makecontext(schedule, (void (*)(void))scheduler, 2, PRIORITY, FALSE);
     swapcontext(head->td->uc, schedule);
   }
@@ -307,12 +216,10 @@ static void scheduler(int policy, int insert_sus) {
         } else if (schedule_policy == SJF) {
           head = get_head(sjf_queue);
         }
-
         if(head == NULL) {
           printf("no threads available in ready queue yet switch back to main context\n");
           swapcontext(schedule, maincontext);
         } else {
-
           if(head->td->state == CREATED) {
             head->td->state = SCHEDULED;
             gettimeofday(&t, NULL);
@@ -332,12 +239,11 @@ static void scheduler(int policy, int insert_sus) {
           }
         }
 
-
       } else if (schedule_policy == PRIORITY) {
         // very first thread to join
-        countH = 0;
-        countL = 0;
-        countM = 0;
+        hhead = get_head(first);
+        mhead = get_head(second);
+        lhead = get_head(third);   
 
         //sigprocmask(SIG_BLOCK, &blocked, NULL);
         get_next_run();
@@ -392,7 +298,7 @@ static void scheduler(int policy, int insert_sus) {
         }
         oldtid = head->td->tid;
         oldprio = head->td->priority;
-        ///sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+        sigprocmask(SIG_UNBLOCK, &blocked, NULL);  //here added
         gettimeofday(&t, NULL);
         double curtime;
         curtime = calculate_time(t, begintime);
@@ -408,7 +314,7 @@ static void scheduler(int policy, int insert_sus) {
         oldtid = head->td->tid;
         oldprio = head->td->priority;
         //delete_priority(head);
-        ///sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+        sigprocmask(SIG_UNBLOCK, &blocked, NULL); //here addede
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);
@@ -418,13 +324,14 @@ static void scheduler(int policy, int insert_sus) {
         oldprio = head->td->priority;
         thrd* newthread = copy_thread(head->td);
         tnode* newnode = new_tnode(newthread, NULL);
+	head->td->state = FINISHED;
         if(insert_sus == TRUE) {
           insert_tail(sus_queue, newnode);
         } else {
           add_priority(newnode);
         }
         //delete_priority(head);
-        ///sigprocmask(SIG_UNBLOCK, &blocked, NULL);
+        sigprocmask(SIG_UNBLOCK, &blocked, NULL);   // here added
 
 
         gettimeofday(&t, NULL);
@@ -432,7 +339,7 @@ static void scheduler(int policy, int insert_sus) {
         logfile(curtime, "STOPPED", oldtid, oldprio);
       }
 
-      ///sigprocmask(SIG_BLOCK, &blocked, NULL);
+      sigprocmask(SIG_BLOCK, &blocked, NULL);
       get_next_run();
       if(head != NULL) {
         head->td->state = SCHEDULED;
@@ -656,7 +563,7 @@ int thread_libinit(int policy)
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = QUANTA;
     timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = QUANTA;
+    timer.it_value.tv_usec = 100;
 
     store.it_interval.tv_sec = 0;
     store.it_interval.tv_usec = QUANTA;
@@ -667,10 +574,27 @@ int thread_libinit(int policy)
     sigaddset(&blocked, SIGALRM);
     signal(SIGALRM, sig_handler);
 
-    countH = 0;
-    countM = 0;
-    countL = 0;
-
+    int temparr[4] = {-1, 0, 1, -1};
+    int temp = 1;
+    while(temp <= TOTAL) {
+      for(int i = 0; i < 4; i++) {
+	turns[temp-1] = temparr[i];
+	temp ++;
+      }
+      if(temp == 5) {
+	turns[temp-1] = M;
+	temp ++;
+      } else if(temp == 10) {
+	turns[temp-1] = M;
+	temp ++;
+      } else if(temp == 15) {
+	turns[temp-1] = H;
+	temp++;
+      }
+    }
+    
+    //turns[TOTAL] = {H, M, L, H, M, H, M, L, H, M, H, M, L, H, H, H, M, L, H};
+    
   }
 
   lib_init = TRUE;
