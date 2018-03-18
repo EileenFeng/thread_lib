@@ -8,6 +8,8 @@
 #include "tnode.h"
 #define STACKSIZE (256*1024)
 
+extern count = 0;
+
 thrd* new_thrd(int tid, ucontext_t* uc) {
   thrd* td = (thrd*)malloc(sizeof(thrd));
   if(td == NULL) {
@@ -34,7 +36,7 @@ static thrd* copythread(thrd* td) {
   memcpy(newthread->uc, td->uc, sizeof(ucontext_t));
   newthread->uc->uc_stack.ss_sp = malloc(STACKSIZE);
   memcpy(newthread->uc->uc_stack.ss_sp, td->uc->uc_stack.ss_sp, STACKSIZE);
-  
+
   //newthread->uc = td->uc;
   newthread->tid = td->tid;
   newthread->state = td->state;
@@ -48,7 +50,7 @@ static thrd* copythread(thrd* td) {
   newthread->start = malloc(sizeof(struct timeval));
   memcpy(newthread->start, td->start, sizeof(struct timeval));
   memcpy(newthread->wait_tids, td->wait_tids, sizeof(int) * td->wait_size);
-  
+
    for(int i = 0; i < td->index; i++) {
     newthread->last_thr_run[i] = td->last_thr_run[i];
   }
@@ -56,6 +58,7 @@ static thrd* copythread(thrd* td) {
 }
 
 static tnode* new_node(thrd* td, tnode* next) {
+  count++;
   tnode* tn = (tnode*)malloc(sizeof(tnode));
   if(tn == NULL) {
     perror("Error malloc new_node: ");
@@ -63,6 +66,7 @@ static tnode* new_node(thrd* td, tnode* next) {
   }
   tn->td = td;
   tn->next = next;
+  //printf(" CCCCCCCCCCCCCCcc count is %d\n", count);
   return tn;
 }
 
@@ -88,28 +92,3 @@ extern thrd* (*new_thread) (int, ucontext_t*) = &new_thrd;
 extern tnode* (*new_tnode) (thrd*, tnode*) = &new_node;
 extern void (*free_tnode) (tnode*) = &free_node;
 extern thrd* (*copy_thread) (thrd*) = &copythread;
-
-/*
-void hello() {
-  printf("Hello here\n");
-}
-
-int main() {
-  printf("1");
-  
-  printf("2");
-  ucontext_t uc;
-  void* stack = malloc(2048);
-  uc.uc_stack.ss_sp = stack;
-  uc.uc_stack.ss_size = 2048;
-  uc.uc_stack.ss_flags = SS_DISABLE;
-  getcontext(&uc);
-  makecontext(&uc, hello, 0);
-  printf("3");
-  thrd* td = new_thrd(0, uc);
-  printf("4");
-  tnode* tn = new_node(td, NULL);
-  printf("before free\n");
-  free_node(tn);
-}
-*/

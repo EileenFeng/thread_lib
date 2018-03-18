@@ -30,7 +30,6 @@ int main() {
     if(tids[i] < 0) {
       break;
     } else {
-      printf("joining %d\n", tids[i]);
       if(thread_join(tids[i]) == -1) {
 	printf("join %d failed\n", tids[i]);
 	break;

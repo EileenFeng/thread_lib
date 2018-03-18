@@ -34,9 +34,11 @@ static void insert_node(pqueue pq, tnode* tn) {
   if(pq->size == 0) {
     pq->head = tn;
     pq->size = 1;
+    printf("r1 %d\n", pq->size);
     return;
   }
   if(tn == NULL) {
+    printf("r2\n");
     return;
   }
   tnode* thead = pq->head;
@@ -44,6 +46,7 @@ static void insert_node(pqueue pq, tnode* tn) {
     tn->next = thead;
     pq->head = tn;
     pq->size ++;
+    printf("r3\n");
     return;
   }
   while(thead->next != NULL) {
@@ -55,10 +58,13 @@ static void insert_node(pqueue pq, tnode* tn) {
       break;
     }
   }
+  printf("last tid %d\n", thead->td->tid);
   tnode* temp = thead->next;
+  printf("temp is NULL? %d\n", temp == NULL);
   thead->next = tn;
   tn->next = temp;
   pq->size++;
+  printf("r4 %d\n", pq->size);
   return;
 }
 
