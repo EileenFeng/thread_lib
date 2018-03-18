@@ -592,9 +592,6 @@ int thread_libinit(int policy)
 	temp++;
       }
     }
-    
-    //turns[TOTAL] = {H, M, L, H, M, H, M, L, H, M, H, M, L, H, H, H, M, L, H};
-    
   }
 
   lib_init = TRUE;
@@ -612,19 +609,11 @@ int thread_libterminate(void)
   if(schedule_policy == FIFO) {
     free_queue(fifo_queue);
   } else if(schedule_policy == SJF) {
-    tnode* temp = get_head(sjf_queue);
-    printf("queue size is %d\n", get_size(sjf_queue));
-    while(temp!= NULL) {
-      printf("tid %d state %d priority %f\n", temp->td->tid, temp->td->state, temp->td->priority);
-      temp = temp->next;
-    }
     free_queue(sjf_queue);
   } else if(schedule_policy == PRIORITY) {
-
     free_queue(first);
     free_queue(second);
     free_queue(third);
-        
   }
 
   free_queue(sus_queue);
@@ -692,14 +681,6 @@ int thread_create(void (*func)(void *), void *arg, int priority)
     if(newnode == NULL) {
       return FAIL;
     }
-    /*if(priority == H) {
-      insert_tail(first, newnode);
-    } else if (priority == M) {
-      insert_tail(second, newnode);
-    } else if (priority == L) {
-      insert_tail(third, newnode);
-    }
-    */
     sigprocmask(SIG_BLOCK, &blocked, NULL);
     add_priority(newnode);
     sigprocmask(SIG_BLOCK, &blocked, NULL);
@@ -723,9 +704,6 @@ int thread_join(int tid) {
     makecontext(schedule, (void (*)(void))scheduler, 2, FIFO, FALSE);
     swapcontext(maincontext, schedule);
   } else {
-    // wait_tid incremented before adding new stuff, thus the current tid will always points to some tid
-    // check scheduler wait_tid for more info
-
     if(schedule_policy == FIFO || schedule_policy == SJF) {
       tnode* target;
       if(schedule_policy == FIFO) {
@@ -795,10 +773,10 @@ if(schedule_policy == PRIORITY) {
 } else {
   head->td->state = STOPPED;
 }
-printf("tid %d yield\n", head->td->tid);
+ printf("tid %d yield\n", head->td->tid);
  makecontext(schedule, (void (*) (void))scheduler, 2, schedule_policy, FALSE);
 
-swapcontext(head->td->uc, schedule);
-return SUCCESS;
+ swapcontext(head->td->uc, schedule);
+ return SUCCESS;
 
 }
