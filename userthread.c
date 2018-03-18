@@ -723,21 +723,6 @@ int thread_join(int tid) {
         target->td->wait_tids = realloc(target->td->wait_tids, sizeof(int) * target->td->wait_size);
       }
       target->td->wait_tids[target->td->wait_index] = head->td->tid;
-      printf("%d jjjjjjoined %d\n", head->td->tid, tid);
-      tnode* temp = get_head(fifo_queue);
-      printf("in join the fifo queue\n");
-      while(temp != NULL) {
-	printf("tid %d\n", temp->td->tid);
-	temp = temp->next;
-      }
-      printf("and the sus: \n");
-      tnode* haha = get_head(sus_queue);
-      while(haha != NULL) {
-	printf("sus: %d\n", haha->td->tid);
-	haha = haha->next;
-      }
-     
-      
       head->td->state = STOPPED;
       makecontext(schedule, (void (*)(void))scheduler, 2, FIFO, TRUE);
       gettimeofday(head->td->start, NULL);
