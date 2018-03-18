@@ -8,6 +8,7 @@
 
 typedef struct thrd {
   int tid;
+  int valgrindid;
   int state; // scheduled or stopped
   int schedule; // scheduling algorithm
   double priority;

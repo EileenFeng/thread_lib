@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include <unistd.h>
+#include "/usr/include/valgrind/valgrind.h"
 #include "tnode.h"
 #define STACKSIZE (256*1024)
 
@@ -34,7 +35,10 @@ static thrd* copythread(thrd* td) {
   if(newthread == NULL) { return NULL; }
   newthread->uc = malloc(sizeof(ucontext_t));
   memcpy(newthread->uc, td->uc, sizeof(ucontext_t));
-  newthread->uc->uc_stack.ss_sp = malloc(STACKSIZE);
+  void* s = malloc(STACKSIZE);
+  newthread->uc->uc_stack.ss_sp = s;
+  newthread->uc->uc_stack.ss_size = STACKSIZE;
+  newthread->valgrindid = VALGRIND_STACK_REGISTER(s, s+STACKSIZE);    
   memcpy(newthread->uc->uc_stack.ss_sp, td->uc->uc_stack.ss_sp, STACKSIZE);
 
   //newthread->uc = td->uc;
@@ -74,7 +78,9 @@ static void free_node(tnode* tn) {
   if(tn == NULL) {
     return;
   }
+
   if (tn->td->uc->uc_stack.ss_sp != NULL) {
+    VALGRIND_STACK_DEREGISTER(tn->td->valgrindid);   
     free(tn->td->uc->uc_stack.ss_sp); // free the stack
     tn->td->uc->uc_stack.ss_sp = NULL;
   }

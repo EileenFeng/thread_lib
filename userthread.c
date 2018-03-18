@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include "/usr/include/valgrind/valgrind.h"
 #include "userthread.h"
 #include "pqueue.h"
 
@@ -59,6 +60,7 @@ static int tidcount = 2; //counting the number of threads
 static int firstthread = TRUE;
 static double total_runtime = 0;
 static int total_thrdnum = 0;
+static int schedule_id;
 
 sigset_t blocked; // signal set for priority scheduling
 
@@ -485,14 +487,15 @@ int thread_libinit(int policy)
 
   void* stack;
   maincontext = malloc(sizeof(ucontext_t));
+  mainthread = new_thread(0, maincontext); 
   getcontext(maincontext);
   stack = malloc(STACKSIZE);
+  mainthread->valgrindid = VALGRIND_STACK_REGISTER(stack, stack+STACKSIZE);  
   maincontext->uc_stack.ss_sp = stack;
   maincontext->uc_stack.ss_size = STACKSIZE;
   maincontext->uc_stack.ss_flags = SS_DISABLE;
   //  sigemptyset(&(maincontext->uc_sigmask));
   maincontext->uc_link = NULL;
-  mainthread = new_thread(0, maincontext);
   mainthread->tid = MAINTID;
   mainthread->state = SCHEDULED;
   printf("creting for main\n");
@@ -502,6 +505,7 @@ int thread_libinit(int policy)
   schedule = malloc(sizeof(ucontext_t));
   getcontext(schedule);
   sta = malloc(STACKSIZE);
+  schedule_id = VALGRIND_STACK_REGISTER(sta, sta+STACKSIZE);
   schedule->uc_stack.ss_sp = sta;
   schedule->uc_stack.ss_size = STACKSIZE;
   schedule->uc_stack.ss_flags = SS_DISABLE;
@@ -604,14 +608,17 @@ int thread_libterminate(void)
   }
 
   free_queue(sus_queue);
+  VALGRIND_STACK_DEREGISTER(mainthread->valgrindid);        
   free(maincontext->uc_stack.ss_sp);
   free(maincontext);
-  free(mainthread->wait_tids);
+   free(mainthread->wait_tids);
   free(mainthread->start);
   free(mainthread);
   free(mainnode);
+  VALGRIND_STACK_DEREGISTER(schedule_id);    
   free(schedule->uc_stack.ss_sp);
   free(schedule);
+  
   if(fclose(stream) == EOF) {
     perror("Close stream in terminate failed: ");
     return FAIL;
@@ -624,16 +631,17 @@ int thread_create(void (*func)(void *), void *arg, int priority)
 {
   struct timeval t;
   ucontext_t* newuc = malloc(sizeof(ucontext_t));
+  thrd* newthread = new_thread(tidcount, newuc); 
   void *stack;
   getcontext(newuc);
   stack = malloc(STACKSIZE);
+  newthread->valgrindid = VALGRIND_STACK_REGISTER(stack, stack+STACKSIZE);     
   newuc->uc_stack.ss_sp = stack;
   newuc->uc_stack.ss_size = STACKSIZE;
   newuc->uc_stack.ss_flags = SS_DISABLE;
   sigemptyset(&(newuc->uc_sigmask));
   makecontext(newuc, (void (*)(void))stubfunc, 2, func, arg);
-  thrd* newthread = new_thread(tidcount, newuc);
-  if(newthread == NULL) {
+   if(newthread == NULL) {
     return FAIL;
   }
   tidcount++;
