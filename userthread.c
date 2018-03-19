@@ -55,6 +55,7 @@ static struct timeval begintime;
 static struct itimerval timer; // timer for priority scheduling
 
 static int lib_init = FALSE;
+static int lib_term = FALSE;
 static int schedule_policy = -1;    // policy of current scheduling
 static int tidcount = 2; //counting the number of threads
 static int firstthread = TRUE;
@@ -549,7 +550,7 @@ int thread_libinit(int policy)
 
   if( policy != FIFO && policy != SJF && policy != PRIORITY) {
     lib_init = FALSE;
-    return FALSE;
+    return FAIL;
   }
 
   sus_queue = new_queue();
@@ -676,7 +677,7 @@ int thread_libinit(int policy)
 
 int thread_libterminate(void)
 {
-  if(lib_init != TRUE) {
+  if(lib_init != TRUE || lib_term == TRUE) {
     printf("library not initialized\n");
     return FAIL;
   }
@@ -707,12 +708,16 @@ int thread_libterminate(void)
     perror("Close stream in terminate failed: ");
     return FAIL;
   }
+  lib_term = TRUE;
   return SUCCESS;
 }
 
 
 int thread_create(void (*func)(void *), void *arg, int priority)
 {
+  if(lib_init != TRUE || lib_term == TRUE) {
+    return FAIL;
+  }
   struct timeval t;
   ucontext_t* newuc = malloc(sizeof(ucontext_t));
   thrd* newthread = new_thread(tidcount, newuc); 
@@ -775,6 +780,10 @@ int thread_create(void (*func)(void *), void *arg, int priority)
 
 int thread_join(int tid) {
 
+  if(lib_init != TRUE || lib_term == TRUE) {
+    return FAIL;
+  }
+  
   if(head == NULL) {
     // the main thread is waiting for the thread tid
     mainthread->state = STOPPED;
@@ -849,6 +858,10 @@ int thread_join(int tid) {
 
 int thread_yield(void) {
 
+  if(lib_init != TRUE || lib_term == TRUE) {
+    return FAIL;
+  }
+  
   if(schedule_policy == PRIORITY) {
     sigprocmask(SIG_BLOCK, &blocked, NULL);
   }
