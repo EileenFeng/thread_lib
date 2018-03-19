@@ -96,12 +96,23 @@ static tnode* find_priority(int);
 static void get_next_run();
 static void arrange_priority(tnode*);
 static void pop_priority();
+static void reset_heads_priority();
 static void free_basics();
 
 /************************** FUNCTIONS *********************************/
 
+static void reset_heads_priority() {
+  if(head->td->priority == H) {
+    hhead = get_head(first);
+  }else if(head->td->priority == M) {
+    mhead = get_head(second);
+  } else if(head->td->priority == L) {
+    lhead = get_head(third);
+  }
+}
+
 static void free_basics(){
-  VALGRIND_STACK_DEREGISTER(mainthread->valgrindid);                                                                 
+  VALGRIND_STACK_DEREGISTER(mainthread->valgrindid);
   free(maincontext->uc_stack.ss_sp);
   free(maincontext);
   free(mainthread->wait_tids);
@@ -315,8 +326,18 @@ static void scheduler(int policy, int insert_sus) {
     // record the current tnode,
     if(schedule_policy == PRIORITY) {
       int oldtid, oldprio;
+      int resethead = FALSE;
       if(head->td->state == FINISHED) {
         printf("----Finished %d with state %d priority %f\n", head->td->tid, head->td->state, head->td->priority);
+	pop_priority(head);
+	if(head->td->priority == H) {
+	  resethead = get_size(first) == 0 ? TRUE : FALSE;
+	} else if (head->td->priority == M) {
+	  resethead = get_size(second) == 0 ? TRUE : FALSE;
+	} else if (head->td->priority == L) {
+	  resethead = get_size(third) == 0 ? TRUE : FALSE;
+	}
+	  
         int temp_index = head->td->wait_index;
         if(temp_index >= 0) {
           for(int i = 0; i <= temp_index; i++) {
@@ -335,6 +356,7 @@ static void scheduler(int policy, int insert_sus) {
           }
           head->td->wait_index = UNKNOWN;
         }
+	
         oldtid = head->td->tid;
         oldprio = head->td->priority;
         gettimeofday(&t, NULL);
@@ -344,7 +366,16 @@ static void scheduler(int policy, int insert_sus) {
       } else if(head->td->state == SCHEDULED){
         // get stopped by signal handler, running time exceeds quanta
 	head->td->state = STOPPED;
+	
 	pop_priority(head);
+	if(head->td->priority == H) {
+	  resethead = get_size(first) == 0 ? TRUE : FALSE;
+	} else if (head->td->priority == M) {
+	  resethead = get_size(second) == 0 ? TRUE : FALSE;
+	} else if (head->td->priority == L) {
+	  resethead = get_size(third) == 0 ? TRUE : FALSE;
+	}   
+	
 	oldtid = head->td->tid;
         oldprio = head->td->priority;
 	add_priority(head);
@@ -355,11 +386,21 @@ static void scheduler(int policy, int insert_sus) {
       } else if(head->td->state == STOPPED) {
         oldtid = head->td->tid;
         oldprio = head->td->priority;
+
+	pop_priority(head);
+	if(head->td->priority == H) {
+	  resethead = get_size(first) == 0 ? TRUE : FALSE;
+	} else if (head->td->priority == M) {
+	  resethead = get_size(second) == 0 ? TRUE : FALSE;
+	} else if (head->td->priority == L) {
+	  resethead = get_size(third) == 0 ? TRUE : FALSE;
+	}
+	
 	if(insert_sus == TRUE) {
-	  pop_priority(head);
+	  //pop_priority(head);
 	  insert_tail(sus_queue, head);
 	} else {
-	  pop_priority(head);
+	  //pop_priority(head);
 	  add_priority(head);
 	}
         gettimeofday(&t, NULL);
@@ -367,6 +408,10 @@ static void scheduler(int policy, int insert_sus) {
         logfile(curtime, "STOPPED", oldtid, oldprio);
       }
 
+      if(resethead == TRUE) {                                                                                   
+          reset_heads_priority();
+      } 
+      
       get_next_run();
       if(head != NULL) {
         head->td->state = SCHEDULED;
@@ -614,6 +659,7 @@ int thread_libinit(int policy)
 	temp++;
       }
     }
+    
   }
 
   lib_init = TRUE;

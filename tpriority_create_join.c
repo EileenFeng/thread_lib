@@ -7,13 +7,14 @@
 
 #define N 6
 
-void foo() {
-  poll(NULL, 0, 1);
+void foo(int val) {
+  printf("Created and scheduled %d threads\n", val+1);
 }
 
 int main(void) {
-  printf(" * Running 5 threads! \n");
-
+  printf(" * Simply testing priority create and join (Really Basic Test)! \n");
+  printf(" * Order of running depends on implementation.\n");
+  
   if (thread_libinit(PRIORITY) == -1)
     exit(EXIT_FAILURE);
 
@@ -21,13 +22,13 @@ int main(void) {
   memset(tids, -1, sizeof(tids));
 
   for (int i = 0; i < 2; i++)  {
-    tids[i] = thread_create(foo, NULL, 0);
+    tids[i] = thread_create(foo, i, 0);
   }
    for (int i = 2; i < 4; i++)  {
-    tids[i] = thread_create(foo, NULL, -1);
+    tids[i] = thread_create(foo, i, -1);
   }
     for (int i = 4; i < 6; i++)  {
-    tids[i] = thread_create(foo, NULL, 1);
+    tids[i] = thread_create(foo, i, 1);
   }
 
   for (int i = 0; i < N; i++)  {

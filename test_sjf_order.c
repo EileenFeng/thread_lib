@@ -3,9 +3,12 @@
 #include <unistd.h>
 #include "userthread.h"
 
-void yield(char* number) {
+#define FAIL -1
+#define SUCCESS 0
+
+void yield(char* input) {
   for(int i = 0; i < 5; i ++) {
-    printf("yeilding  %s %d\n", number, i);
+    printf("Current thread is %s %d\n", input, i);
     thread_yield();
     sleep(1);
   }
@@ -13,16 +16,24 @@ void yield(char* number) {
 
 
 void normal(int val) {
-  printf("wata --==---========= %d\n", val);   
+  printf("Hello we are testing sjf order %d\n", val);   
 }
 
 int main() {
-  thread_libinit(SJF);
+  printf("* Test for SJF thread_yield\n");
+  printf("* Should print out ten lines of 'Hello we are testing sjf order <number> ' before FINISH printing 'Current thread is yielding' message\n");
+  
+  if(thread_libinit(SJF) == FAIL) {
+    exit(EXIT_FAILURE);
+  }
+  
   int tids[10];
+  
   for(int i = 0; i < 10; i++) {
     tids[i] = -1;
   }
-  int tid = thread_create(yield, "111", -1);
+  
+  int tid = thread_create(yield, "yielding", -1);
   for(int i = 0; i < 10; i++) {
     tids[i] = thread_create(normal, i, -1);
   }
