@@ -6,20 +6,19 @@
 #define N 6
 
 void foo(int tid) {
-  thread_join(2);
-  //thread_join(3);
+  thread_join(tid);
   for(int i = 0; i < 7; i++) {
-    printf("%d  ---+++---+++---+++---+++\n", tid+2);
+    printf("Joining thread %d\n", tid);
   }
 }
 
 void foo2(int tid) {
-  printf("in Fooooo22222ooooooooooooooo %d\n", tid+2);
+  printf("Hello Work \n");
 }
 
 int main(void) {
-  printf(" * Running 6 threads! \n");
-  printf("* a simple test that highest priority threads join lower priority threads\n");
+  printf("* Test for joining threads in priority\n");
+    
   if (thread_libinit(PRIORITY) == -1){
     exit(EXIT_FAILURE);
   }
@@ -32,21 +31,23 @@ int main(void) {
   }
   
   for (int i = 2; i < 4; i++)  {
-    tids[i] = thread_create(foo, i, -1);
+    tids[i] = thread_create(foo, tids[0], -1);
   }
    
-  for (int i = 4; i < 6; i++)  {
+  for (int i = 4; i < N; i++)  {
     tids[i] = thread_create(foo2, i, 1);
   }
-    
+
+  printf("* Threads %d and thread  %d should not finish until the thread %d finishes\n", tids[2], tids[3], tids[0]);
+  
   for (int i = 0; i < N; i++)  {
     if (tids[i] == -1)
       exit(EXIT_FAILURE);
   }
 
-  thread_join(2);
+  thread_join(tids[0]);
   
-  printf("baaaack\n");
+  printf("back to main context\n");
   if (thread_libterminate() == -1){
     exit(EXIT_FAILURE);
   }

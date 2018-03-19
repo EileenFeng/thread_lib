@@ -5,22 +5,21 @@
 
 #define N 6
 
-void foo(int val) {
-  //  poll(NULL, 0, 20000);
-  for(int i = 0; i < 7; i++) {
-    printf("||||||||||||||ssssssssssssleeping %d  %d\n", i, val);
-    sleep(1);
+void foo(int input) {
+  for(int i = 0; i < 6; i++) {
+    printf("The %dth thread in `tids` array alarmed %d times\n", input, i+1);
+    poll(NULL, 0, 100);
   }
-  printf("looooooooooooool %d\n", val);
+  printf("Out of loop in foo %d\n", input);
 }
 
 void foo2(int val) {
-  //poll(NULL, 0, 1);
-  printf("-----------------------------fffffffffffffffoo2 %d\n", val);
+  printf("Hello World\n");
 }
 
 int main(void) {
-  printf(" * Running 5 threads! \n");
+  printf("* Testing timer and switching for priority scheduling\n");
+  printf("* Should print out 'The <num>th thread in `tids` array alarmed' for 6 times for the 3rd and 4th thread in the 'tids' array, before printing out the 'Out of loop in foo' message\n");
 
   if (thread_libinit(PRIORITY) == -1)
     exit(EXIT_FAILURE);
@@ -48,7 +47,7 @@ int main(void) {
       exit(EXIT_FAILURE);
   }
 
-  printf("baaaack\n");
+  printf("back to main context\n");
   
   if (thread_libterminate() == -1)
     exit(EXIT_FAILURE);

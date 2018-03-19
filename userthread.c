@@ -363,6 +363,11 @@ static void scheduler(int policy, int insert_sus) {
         double curtime;
         curtime = calculate_time(t, begintime);
         logfile(curtime, "FINISHED", oldtid, oldprio);
+	if(resethead == TRUE) {
+	  reset_heads_priority();
+	}  
+	free_tnode(head);
+	head = NULL;
       } else if(head->td->state == SCHEDULED){
         // get stopped by signal handler, running time exceeds quanta
 	head->td->state = STOPPED;
@@ -382,7 +387,10 @@ static void scheduler(int policy, int insert_sus) {
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);
-
+	if(resethead == TRUE) {
+	  reset_heads_priority();
+	}
+	
       } else if(head->td->state == STOPPED) {
         oldtid = head->td->tid;
         oldprio = head->td->priority;
@@ -406,12 +414,11 @@ static void scheduler(int policy, int insert_sus) {
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);
+	if(resethead == TRUE) {
+	  reset_heads_priority();
+	}  
       }
 
-      if(resethead == TRUE) {                                                                                   
-          reset_heads_priority();
-      } 
-      
       get_next_run();
       if(head != NULL) {
         head->td->state = SCHEDULED;

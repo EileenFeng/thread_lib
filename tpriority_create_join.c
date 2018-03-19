@@ -37,8 +37,9 @@ int main(void) {
   }
 
   for (int i = 0; i < N; i++)  {
-    if (thread_join(tids[i]) == -1)
+    if (thread_join(tids[i]) == -1) {
       exit(EXIT_FAILURE);
+    }
   }
 
   if (thread_libterminate() == -1)
