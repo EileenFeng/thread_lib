@@ -96,8 +96,23 @@ static tnode* find_priority(int);
 static void get_next_run();
 static void arrange_priority(tnode*);
 static void pop_priority();
+static void free_basics();
 
 /************************** FUNCTIONS *********************************/
+
+static void free_basics(){
+  VALGRIND_STACK_DEREGISTER(mainthread->valgrindid);                                                                 
+  free(maincontext->uc_stack.ss_sp);
+  free(maincontext);
+  free(mainthread->wait_tids);
+  free(mainthread->start);
+  free(mainthread);
+  free(mainnode);
+  VALGRIND_STACK_DEREGISTER(schedule_id);
+  free(schedule->uc_stack.ss_sp);
+  free(schedule);
+}
+
 
 static void arrange_priority(tnode* n) {
   if(n->td->priority == H) {
@@ -518,17 +533,20 @@ int thread_libinit(int policy)
 
   if((logfd = open("log.txt", O_CREAT | O_TRUNC | O_WRONLY, 0666)) == FAIL) {
     perror("Failed to open file in init: ");
+    free_basics();
     return FAIL;
   }
 
   if((stream = fdopen(logfd, "w")) == NULL) {
     perror("Failed to open stream in init: ");
+    free_basics();
     return FAIL;
   }
 
   char titles[] = "[ticks]\tOPERATION\tTID\tPRIORITY\n";
   if (write(logfd, titles, strlen(titles)) == FAIL) {
     perror("write failed in init: ");
+    free_basics();
     return FAIL;
   }
 
@@ -536,6 +554,7 @@ int thread_libinit(int policy)
     fifo_queue = new_queue();
     if(fifo_queue == NULL) {
       printf("Creating fifo queue failed\n");
+      free_basics();
       return FAIL;
     }
   } else if (policy == SJF) {
@@ -543,13 +562,29 @@ int thread_libinit(int policy)
     sjf_queue = new_queue();
     if(sjf_queue == NULL) {
       printf("Creating sjf queue failed\n");
+      free_basics();
       return FAIL;
     }
   } else if (policy == PRIORITY) {
 
     first = new_queue();
+    if(first == NULL) {
+      free_basics();
+      return FAIL;
+    }
     second = new_queue();
+    if(second == NULL) {
+      free_basics();
+      free(first);
+      return FAIL;
+    }
     third = new_queue();
+    if(third == NULL) {
+      free_basics();
+      free(second);
+      free(third);
+      return FAIL;
+    }
 
     // set timer
     timer.it_interval.tv_sec = 0;
@@ -607,7 +642,7 @@ int thread_libterminate(void)
   VALGRIND_STACK_DEREGISTER(mainthread->valgrindid);        
   free(maincontext->uc_stack.ss_sp);
   free(maincontext);
-   free(mainthread->wait_tids);
+  free(mainthread->wait_tids);
   free(mainthread->start);
   free(mainthread);
   free(mainnode);
