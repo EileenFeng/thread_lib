@@ -9,8 +9,6 @@
 #include "tnode.h"
 #define STACKSIZE (256*1024)
 
-extern count = 0;
-
 thrd* new_thrd(int tid, ucontext_t* uc) {
   thrd* td = (thrd*)malloc(sizeof(thrd));
   if(td == NULL) {
@@ -31,7 +29,6 @@ thrd* new_thrd(int tid, ucontext_t* uc) {
 }
 
 static tnode* new_node(thrd* td, tnode* next) {
-  count++;
   tnode* tn = (tnode*)malloc(sizeof(tnode));
   if(tn == NULL) {
     perror("Error malloc new_node: ");
@@ -39,7 +36,6 @@ static tnode* new_node(thrd* td, tnode* next) {
   }
   tn->td = td;
   tn->next = next;
-  //printf(" CCCCCCCCCCCCCCcc count is %d\n", count);
   return tn;
 }
 
