@@ -14,8 +14,9 @@ void foo(void* tid) {
   }
 }
 
-void foo2() {
-  printf("Hello Work \n");
+void foo2(void* val) {
+  int temp = *(int*)val;
+  printf("Hello Work from thread with INDEX %d\n", temp+1);
 }
 
 int main(void) {
@@ -25,11 +26,13 @@ int main(void) {
     exit(EXIT_FAILURE);
   }
   int tids[N];
+  int args[N];
   memset(tids, -1, sizeof(tids));
   
 
   for (int i = 0; i < 2; i++)  {
-    tids[i] = thread_create(foo2, NULL, 0);
+    args[i] = i;
+    tids[i] = thread_create(foo2, &args[i], 0);
   }
   
   for (int i = 2; i < 4; i++)  {
@@ -37,7 +40,8 @@ int main(void) {
   }
    
   for (int i = 4; i < N; i++)  {
-    tids[i] = thread_create(foo2, NULL, 1);
+    args[i] = i;
+    tids[i] = thread_create(foo2, &args[i], 1);
   }
 
   printf("* Threads %d and thread  %d should not finish until the thread %d finishes\n", tids[2], tids[3], tids[0]);

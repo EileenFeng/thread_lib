@@ -5,7 +5,7 @@ HW4_ThreadLib
     - 'thread_create(int policy)' allows initializing a thread library with the corresponding policy 'policy'
     - use 'thread_yield()' to yield or 'thread_join(int tid)' to join a specific thread
     - 'thread_terminate()' to terminate the library
-
+    - to run the tests, type in 'make' to compile them all and enter the executable name to execute tests
 
 2. Limitations
    -  when 'thread_join' is called when currently no threads is running, 'thread_join' will make the main thread join the first thread in the ready queue; this means no matter what 'tid' is passed into 'thread_join' during the very first call to 'thread_join', it is always the head thread of the queue be scheduled.

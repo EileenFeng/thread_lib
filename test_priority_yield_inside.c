@@ -7,17 +7,18 @@
 #define N 6
 
 void foo(void* tid) {
-
+  int temp = *(int*)tid;
   for(int i = 0; i < 6; i++) {
-    printf("Thread with index %d yield %d times\n", *(int*)tid, i+1);
+    printf("Thread with index %d yield %d times\n", temp+1, i+1);
     thread_yield();
   }
-  printf("Thread with index %d finished yielding\n", *(int*)tid);
+  printf("Thread with index %d finished yielding\n", temp+1);
   
 }
 
 void foo2(void* tid) {
-  printf("Thread with index  %d  is running\n", *(int*)tid);
+  int temp = *(int*)tid;
+  printf("Thread with index  %d  is running\n", temp+1);
 }
 
 int main(void) {
