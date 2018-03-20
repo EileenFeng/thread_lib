@@ -27,9 +27,9 @@
 #define H -1
 #define M 0
 #define L 1
-#define HNUM 9  
-#define MNUM 6 
-#define LNUM 4 
+#define HNUM 9
+#define MNUM 6
+#define LNUM 4
 #define TOTAL 19
 
 /****************************** globals ***********************************/
@@ -183,7 +183,7 @@ static tnode* find_priority(int tid) {
   result = find_tid(second, tid);
   if(result != NULL) {
     return result;
-  } 
+  }
   result = find_tid(third, tid);
   if(result != NULL) {
     return result;
@@ -193,7 +193,7 @@ static tnode* find_priority(int tid) {
 
 
 static void sig_handler(int signal){
-  sigprocmask(SIG_BLOCK, &blocked, NULL);  
+  sigprocmask(SIG_BLOCK, &blocked, NULL);
   makecontext(schedule, (void (*) (void))scheduler, 2, schedule_policy, FALSE);
   swapcontext(head->td->uc, schedule);
 }
@@ -283,7 +283,7 @@ static void scheduler(int policy, int insert_sus) {
         // very first thread to join
         hhead = get_head(first);
         mhead = get_head(second);
-        lhead = get_head(third);   
+        lhead = get_head(third);
 
         get_next_run();
         if(head != NULL) {
@@ -321,7 +321,7 @@ static void scheduler(int policy, int insert_sus) {
 	} else if (head->td->priority == L) {
 	  resethead = get_size(third) == 0 ? TRUE : FALSE;
 	}
-	  
+
         int temp_index = head->td->wait_index;
         if(temp_index >= 0) {
           for(int i = 0; i <= temp_index; i++) {
@@ -336,7 +336,7 @@ static void scheduler(int policy, int insert_sus) {
 	  }
           head->td->wait_index = UNKNOWN;
         }
-	
+
         oldtid = head->td->tid;
         oldprio = head->td->priority;
         gettimeofday(&t, NULL);
@@ -345,7 +345,7 @@ static void scheduler(int policy, int insert_sus) {
         logfile(curtime, "FINISHED", oldtid, oldprio);
 	if(resethead == TRUE) {
 	  reset_heads_priority();
-	}  
+	}
 	free_tnode(head);
 	head = NULL;
       } else if(head->td->state == SCHEDULED){
@@ -358,8 +358,8 @@ static void scheduler(int policy, int insert_sus) {
 	  resethead = get_size(second) == 0 ? TRUE : FALSE;
 	} else if (head->td->priority == L) {
 	  resethead = get_size(third) == 0 ? TRUE : FALSE;
-	}   
-	
+	}
+
 	oldtid = head->td->tid;
         oldprio = head->td->priority;
 	add_priority(head);
@@ -369,7 +369,7 @@ static void scheduler(int policy, int insert_sus) {
 	if(resethead == TRUE) {
 	  reset_heads_priority();
 	}
-	
+
       } else if(head->td->state == STOPPED) {
         oldtid = head->td->tid;
         oldprio = head->td->priority;
@@ -382,7 +382,7 @@ static void scheduler(int policy, int insert_sus) {
 	} else if (head->td->priority == L) {
 	  resethead = get_size(third) == 0 ? TRUE : FALSE;
 	}
-	
+
 	if(insert_sus == TRUE) {
 	  insert_tail(sus_queue, head);
 	} else {
@@ -393,7 +393,7 @@ static void scheduler(int policy, int insert_sus) {
         logfile(curtime, "STOPPED", oldtid, oldprio);
 	if(resethead == TRUE) {
 	  reset_heads_priority();
-	}  
+	}
       }
 
       get_next_run();
@@ -436,11 +436,11 @@ static void scheduler(int policy, int insert_sus) {
 		} else if(policy == SJF) {
 		  insert(sjf_queue, findnode);
 		}
-	      } 
-	    } 
+	      }
+	    }
 	  }
 	}
-       
+
 	free_tnode(head);
 	head = NULL;
       } else if (head->td->state == STOPPED) {
@@ -523,10 +523,10 @@ int thread_libinit(int policy)
 
   void* stack;
   maincontext = malloc(sizeof(ucontext_t));
-  mainthread = new_thread(0, maincontext); 
+  mainthread = new_thread(0, maincontext);
   getcontext(maincontext);
   stack = malloc(STACKSIZE);
-  mainthread->valgrindid = VALGRIND_STACK_REGISTER(stack, stack+STACKSIZE);  
+  mainthread->valgrindid = VALGRIND_STACK_REGISTER(stack, stack+STACKSIZE);
   maincontext->uc_stack.ss_sp = stack;
   maincontext->uc_stack.ss_size = STACKSIZE;
   maincontext->uc_stack.ss_flags = SS_DISABLE;
@@ -646,17 +646,17 @@ int thread_libterminate(void)
   }
 
   free_queue(sus_queue);
-  VALGRIND_STACK_DEREGISTER(mainthread->valgrindid);        
+  VALGRIND_STACK_DEREGISTER(mainthread->valgrindid);
   free(maincontext->uc_stack.ss_sp);
   free(maincontext);
   free(mainthread->wait_tids);
   free(mainthread->start);
   free(mainthread);
   free(mainnode);
-  VALGRIND_STACK_DEREGISTER(schedule_id);    
+  VALGRIND_STACK_DEREGISTER(schedule_id);
   free(schedule->uc_stack.ss_sp);
   free(schedule);
-  
+
   if(fclose(stream) == EOF) {
     return FAIL;
   }
@@ -672,11 +672,11 @@ int thread_create(void (*func)(void *), void *arg, int priority)
   }
   struct timeval t;
   ucontext_t* newuc = malloc(sizeof(ucontext_t));
-  thrd* newthread = new_thread(tidcount, newuc); 
+  thrd* newthread = new_thread(tidcount, newuc);
   void *stack;
   getcontext(newuc);
   stack = malloc(STACKSIZE);
-  newthread->valgrindid = VALGRIND_STACK_REGISTER(stack, stack+STACKSIZE);     
+  newthread->valgrindid = VALGRIND_STACK_REGISTER(stack, stack+STACKSIZE);
   newuc->uc_stack.ss_sp = stack;
   newuc->uc_stack.ss_size = STACKSIZE;
   newuc->uc_stack.ss_flags = SS_DISABLE;
@@ -735,7 +735,7 @@ int thread_join(int tid) {
   if(lib_init != TRUE || lib_term == TRUE) {
     return FAIL;
   }
-  
+
   if(head == NULL) {
     // the main thread is waiting for the thread tid
     mainthread->state = STOPPED;
@@ -813,6 +813,11 @@ int thread_yield(void) {
   if(lib_init != TRUE || lib_term == TRUE) {
     return FAIL;
   }
+
+  if(head == NULL) {
+    return FAIL;
+  }
+
   if(schedule_policy == PRIORITY) {
     sigprocmask(SIG_BLOCK, &blocked, NULL);
   }
