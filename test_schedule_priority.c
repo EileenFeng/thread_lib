@@ -14,7 +14,7 @@
 void foo(void* p) {
   for(int i = 0; i < 19; i++) {
     poll(NULL, 0, 100);
-    printf("Thread with priority %d is running %d times\n", p, i+1);
+    printf("Thread with priority %d is running %d times\n", *(int*)p, i+1);
   }
 }
 

@@ -194,7 +194,6 @@ static tnode* find_priority(int tid) {
 
 static void sig_handler(int signal){
   sigprocmask(SIG_BLOCK, &blocked, NULL);  
-  printf("sighandler&&&&&&&&&&&&&&&&&&& calls %d\n", head->td->tid);
   makecontext(schedule, (void (*) (void))scheduler, 2, schedule_policy, FALSE);
   swapcontext(head->td->uc, schedule);
 }
@@ -298,10 +297,8 @@ static void scheduler(int policy, int insert_sus) {
           double curtime = calculate_time(t, begintime);
           logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
           firstthread = FALSE;
-          printf("--11-----before swapping now running %d with state %d priority %f\n", head->td->tid, head->td->state, head->td->priority);
           swapcontext(schedule, head->td->uc);
         } else {
-          printf("switch back to maincontext\n");
           swapcontext(schedule, maincontext);
         }
       }
@@ -317,7 +314,6 @@ static void scheduler(int policy, int insert_sus) {
       int oldtid, oldprio;
       int resethead = FALSE;
       if(head->td->state == FINISHED) {
-        printf("----Finished %d with state %d priority %f\n", head->td->tid, head->td->state, head->td->priority);
 	pop_priority(head);
 	if(head->td->priority == H) {
 	  resethead = get_size(first) == 0 ? TRUE : FALSE;
@@ -336,13 +332,9 @@ static void scheduler(int policy, int insert_sus) {
               if(find->td->state == STOPPED) {
                 find->td->state = CREATED;
                 add_priority(find);
-              } else {
-                printf("!!!!!!!!!!!!! priority !!!!!!!!!!!!!!!!! stuff in suspended queue has wrong state %d\n", find->td->state);
               }
-            } else {
-              printf("Thread %d not found in the suspended queue\n", head->td->wait_tids[i]);
-            }
-          }
+	    }
+	  }
           head->td->wait_index = UNKNOWN;
         }
 	
@@ -360,7 +352,6 @@ static void scheduler(int policy, int insert_sus) {
       } else if(head->td->state == SCHEDULED){
         // get stopped by signal handler, running time exceeds quanta
 	head->td->state = STOPPED;
-	
 	pop_priority(head);
 	if(head->td->priority == H) {
 	  resethead = get_size(first) == 0 ? TRUE : FALSE;
@@ -394,10 +385,8 @@ static void scheduler(int policy, int insert_sus) {
 	}
 	
 	if(insert_sus == TRUE) {
-	  //pop_priority(head);
 	  insert_tail(sus_queue, head);
 	} else {
-	  //pop_priority(head);
 	  add_priority(head);
 	}
         gettimeofday(&t, NULL);
@@ -414,15 +403,11 @@ static void scheduler(int policy, int insert_sus) {
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
-        printf("+++++before swapping now running %d with state %d priority %f\n", head->td->tid, head->td->state, head->td->priority);
-	setitimer(ITIMER_REAL, &timer, NULL);
+      	setitimer(ITIMER_REAL, &timer, NULL);
         swapcontext(schedule, head->td->uc);
-
       } else {
-        printf("Finished scheduling switch back to maincontext\n");
-        swapcontext(schedule, maincontext);
+	swapcontext(schedule, maincontext);
       }
-
       // end of priority scheduling
     } else if(schedule_policy == FIFO || schedule_policy == SJF) {
       if(head->td->state == FINISHED) {
@@ -431,7 +416,6 @@ static void scheduler(int policy, int insert_sus) {
         double curtime;
         curtime = calculate_time(t, begintime);
         logfile(curtime, "FINISHED", head->td->tid, head->td->priority);
-        printf("++==++==++==FFFFFFFFFFFFFFFFFFFFfinished %d\n", head->td->tid);
 
 	if(policy == FIFO) {
 	  pop_head(fifo_queue);
@@ -453,12 +437,8 @@ static void scheduler(int policy, int insert_sus) {
 		} else if(policy == SJF) {
 		  insert(sjf_queue, findnode);
 		}
-	      } else {
-		printf("!!!!!!!!!!!!!!!!!!!!!!! error!!! stuff in suspended queue has wrong state %d!\n", findnode->td->state);
-	      }
-	    } else {
-	      printf("scheduelr not found in suspended queue thread tid not found is  %d\n", head->td->wait_tids[i]);
-	    }
+	      } 
+	    } 
 	  }
 	}
        
@@ -478,14 +458,12 @@ static void scheduler(int policy, int insert_sus) {
 	total_runtime += runtime;
 	int recordtimes = 0;
 	double timesum = 0;
-
 	for(int i = 0; i < RECORD_NUM; i++) {
 	  if(head->td->last_thr_run[i] >=0) {
 	    recordtimes ++;
 	    timesum += head->td->last_thr_run[i];
 	  }
 	}
-
 	double new_priority = (double)timesum/(double)recordtimes;
 	head->td->priority = new_priority;
 
@@ -522,7 +500,6 @@ static void scheduler(int policy, int insert_sus) {
 	double curtime = calculate_time(t, begintime);
 	logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
 	gettimeofday(head->td->start, NULL);
-	printf("BBBBBBBBBBBBBBBBBBbefore swapping now running %d with state %d priority %f\n", head->td->tid, head->td->state, head->td->priority);
 	swapcontext(schedule, head->td->uc);
       } else {
 	firstthread = TRUE;
@@ -571,22 +548,18 @@ int thread_libinit(int policy)
   schedule->uc_link = NULL;
   makecontext(schedule, (void (*)(void))scheduler, 2, schedule_policy, UNKNOWN);
 
-
   if((logfd = open("log.txt", O_CREAT | O_TRUNC | O_WRONLY, 0666)) == FAIL) {
-    perror("Failed to open file in init: ");
     free_basics();
     return FAIL;
   }
 
   if((stream = fdopen(logfd, "w")) == NULL) {
-    perror("Failed to open stream in init: ");
     free_basics();
     return FAIL;
   }
 
   char titles[] = "[ticks]\tOPERATION\tTID\tPRIORITY\n";
   if (write(logfd, titles, strlen(titles)) == FAIL) {
-    perror("write failed in init: ");
     free_basics();
     return FAIL;
   }
@@ -594,20 +567,16 @@ int thread_libinit(int policy)
   if(policy == FIFO) {
     fifo_queue = new_queue();
     if(fifo_queue == NULL) {
-      printf("Creating fifo queue failed\n");
       free_basics();
       return FAIL;
     }
   } else if (policy == SJF) {
-    printf("create queue for sjf\n");
     sjf_queue = new_queue();
     if(sjf_queue == NULL) {
-      printf("Creating sjf queue failed\n");
       free_basics();
       return FAIL;
     }
   } else if (policy == PRIORITY) {
-
     first = new_queue();
     if(first == NULL) {
       free_basics();
@@ -626,7 +595,6 @@ int thread_libinit(int policy)
       free(third);
       return FAIL;
     }
-
     // set timer
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = QUANTA;
@@ -655,7 +623,6 @@ int thread_libinit(int policy)
 	temp++;
       }
     }
-    
   }
 
   lib_init = TRUE;
@@ -666,7 +633,6 @@ int thread_libinit(int policy)
 int thread_libterminate(void)
 {
   if(lib_init != TRUE || lib_term == TRUE) {
-    printf("library not initialized\n");
     return FAIL;
   }
 
@@ -693,7 +659,6 @@ int thread_libterminate(void)
   free(schedule);
   
   if(fclose(stream) == EOF) {
-    perror("Close stream in terminate failed: ");
     return FAIL;
   }
   lib_term = TRUE;
@@ -849,12 +814,10 @@ int thread_yield(void) {
   if(lib_init != TRUE || lib_term == TRUE) {
     return FAIL;
   }
-  
   if(schedule_policy == PRIORITY) {
     sigprocmask(SIG_BLOCK, &blocked, NULL);
   }
   head->td->state = STOPPED;
-  printf("tid %d yield\n", head->td->tid);
   makecontext(schedule, (void (*) (void))scheduler, 2, schedule_policy, FALSE);
   swapcontext(head->td->uc, schedule);
   return SUCCESS;
