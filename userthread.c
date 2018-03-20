@@ -36,12 +36,12 @@
 
 // enums
 enum state
-  {
-    CREATED,
-    SCHEDULED,
-    STOPPED,
-    FINISHED
-  };
+{
+  CREATED,
+  SCHEDULED,
+  STOPPED,
+  FINISHED
+};
 
 
 // priority queue for FIFO and sjf
@@ -146,17 +146,17 @@ static void get_next_run() {
     if(priority == H) {
       head = hhead;
       if(hhead != NULL) {
-	hhead = hhead->next;
+        hhead = hhead->next;
       }
     } else if(priority == M) {
       head = mhead;
       if(mhead != NULL) {
-	mhead = mhead->next;
+        mhead = mhead->next;
       }
     } else if(priority == L) {
       head = lhead;
       if(lhead != NULL) {
-	lhead = lhead->next;
+        lhead = lhead->next;
       }
     }
     counter ++;
@@ -260,7 +260,7 @@ static void scheduler(int policy, int insert_sus) {
           head = get_head(sjf_queue);
         }
         if(head == NULL) {
-	  swapcontext(schedule, maincontext);
+          swapcontext(schedule, maincontext);
         } else {
           if(head->td->state == CREATED) {
             head->td->state = SCHEDULED;
@@ -275,7 +275,7 @@ static void scheduler(int policy, int insert_sus) {
             gettimeofday(head->td->start, NULL);
             swapcontext(schedule, head->td->uc);
           } else {
-	    swapcontext(schedule, maincontext);
+            swapcontext(schedule, maincontext);
           }
         }
 
@@ -313,27 +313,28 @@ static void scheduler(int policy, int insert_sus) {
       int oldtid, oldprio;
       int resethead = FALSE;
       if(head->td->state == FINISHED) {
-	pop_priority(head);
-	if(head->td->priority == H) {
-	  resethead = get_size(first) == 0 ? TRUE : FALSE;
-	} else if (head->td->priority == M) {
-	  resethead = get_size(second) == 0 ? TRUE : FALSE;
-	} else if (head->td->priority == L) {
-	  resethead = get_size(third) == 0 ? TRUE : FALSE;
-	}
+        pop_priority(head);
+        if(head->td->priority == H) {
+          resethead = get_size(first) == 0 ? TRUE : FALSE;
+        } else if (head->td->priority == M) {
+          resethead = get_size(second) == 0 ? TRUE : FALSE;
+        } else if (head->td->priority == L) {
+          resethead = get_size(third) == 0 ? TRUE : FALSE;
+        }
 
         int temp_index = head->td->wait_index;
         if(temp_index >= 0) {
           for(int i = 0; i <= temp_index; i++) {
-	    tnode* find = find_tid(sus_queue, head->td->wait_tids[i]);
-	    pop_node(sus_queue, find);
-	    if(find != NULL) {
+            tnode* find = find_tid(sus_queue, head->td->wait_tids[i]);
+            pop_node(sus_queue, find);
+            if(find != NULL) {
               if(find->td->state == STOPPED) {
                 find->td->state = CREATED;
+                printf("added back to queue %d   %f\n", find->td->tid, find->td->priority);
                 add_priority(find);
               }
-	    }
-	  }
+            }
+          }
           head->td->wait_index = UNKNOWN;
         }
 
@@ -343,69 +344,73 @@ static void scheduler(int policy, int insert_sus) {
         double curtime;
         curtime = calculate_time(t, begintime);
         logfile(curtime, "FINISHED", oldtid, oldprio);
-	if(resethead == TRUE) {
-	  reset_heads_priority();
-	}
-	free_tnode(head);
-	head = NULL;
+        if(resethead == TRUE) {
+          reset_heads_priority();
+        }
+        free_tnode(head);
+        head = NULL;
+        printf("this one finished\n");
       } else if(head->td->state == SCHEDULED){
         // get stopped by signal handler, running time exceeds quanta
-	head->td->state = STOPPED;
-	pop_priority(head);
-	if(head->td->priority == H) {
-	  resethead = get_size(first) == 0 ? TRUE : FALSE;
-	} else if (head->td->priority == M) {
-	  resethead = get_size(second) == 0 ? TRUE : FALSE;
-	} else if (head->td->priority == L) {
-	  resethead = get_size(third) == 0 ? TRUE : FALSE;
-	}
+        head->td->state = STOPPED;
+        pop_priority(head);
+        if(head->td->priority == H) {
+          resethead = get_size(first) == 0 ? TRUE : FALSE;
+        } else if (head->td->priority == M) {
+          resethead = get_size(second) == 0 ? TRUE : FALSE;
+        } else if (head->td->priority == L) {
+          resethead = get_size(third) == 0 ? TRUE : FALSE;
+        }
 
-	oldtid = head->td->tid;
+        oldtid = head->td->tid;
         oldprio = head->td->priority;
-	add_priority(head);
+        add_priority(head);
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);
-	if(resethead == TRUE) {
-	  reset_heads_priority();
-	}
+        if(resethead == TRUE) {
+          reset_heads_priority();
+        }
 
       } else if(head->td->state == STOPPED) {
         oldtid = head->td->tid;
         oldprio = head->td->priority;
 
-	pop_priority(head);
-	if(head->td->priority == H) {
-	  resethead = get_size(first) == 0 ? TRUE : FALSE;
-	} else if (head->td->priority == M) {
-	  resethead = get_size(second) == 0 ? TRUE : FALSE;
-	} else if (head->td->priority == L) {
-	  resethead = get_size(third) == 0 ? TRUE : FALSE;
-	}
+        pop_priority(head);
+        if(head->td->priority == H) {
+          resethead = get_size(first) == 0 ? TRUE : FALSE;
+        } else if (head->td->priority == M) {
+          resethead = get_size(second) == 0 ? TRUE : FALSE;
+        } else if (head->td->priority == L) {
+          resethead = get_size(third) == 0 ? TRUE : FALSE;
+        }
 
-	if(insert_sus == TRUE) {
-	  insert_tail(sus_queue, head);
-	} else {
-	  add_priority(head);
-	}
+        if(insert_sus == TRUE) {
+          printf("added to sus queue %d\n", head->td->tid);
+          insert_tail(sus_queue, head);
+        } else {
+          add_priority(head);
+        }
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "STOPPED", oldtid, oldprio);
-	if(resethead == TRUE) {
-	  reset_heads_priority();
-	}
+        if(resethead == TRUE) {
+          reset_heads_priority();
+        }
       }
-
+      printf("get next run\n");
       get_next_run();
       if(head != NULL) {
+        printf("this run tid is %d with priority %f\n", head->td->tid, head->td->priority);
         head->td->state = SCHEDULED;
         gettimeofday(&t, NULL);
         double curtime = calculate_time(t, begintime);
         logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
-      	setitimer(ITIMER_REAL, &timer, NULL);
+        setitimer(ITIMER_REAL, &timer, NULL);
+        printf("here?\n");
         swapcontext(schedule, head->td->uc);
       } else {
-	swapcontext(schedule, maincontext);
+        swapcontext(schedule, maincontext);
       }
       // end of priority scheduling
     } else if(schedule_policy == FIFO || schedule_policy == SJF) {
@@ -416,93 +421,93 @@ static void scheduler(int policy, int insert_sus) {
         curtime = calculate_time(t, begintime);
         logfile(curtime, "FINISHED", head->td->tid, head->td->priority);
 
-	if(policy == FIFO) {
-	  pop_head(fifo_queue);
-	} else if (policy == SJF) {
-	  pop_head(sjf_queue);
-	}
-	head->next = NULL;
-	//puts waiting threads onto ready queue
-	int temp_index = head->td->wait_index;
+        if(policy == FIFO) {
+          pop_head(fifo_queue);
+        } else if (policy == SJF) {
+          pop_head(sjf_queue);
+        }
+        head->next = NULL;
+        //puts waiting threads onto ready queue
+        int temp_index = head->td->wait_index;
         if(temp_index >= 0) {
           for(int i = 0; i <= temp_index; i++) {
-	    tnode* findnode = find_tid(sus_queue, head->td->wait_tids[i]);
-	    if(findnode != NULL) {
-	      if(findnode->td->state == STOPPED) {
-		pop_node(sus_queue, findnode);
-		findnode->td->state = CREATED;
-		if(policy == FIFO) {
-		  insert_tail(fifo_queue, findnode);
-		} else if(policy == SJF) {
-		  insert(sjf_queue, findnode);
-		}
-	      }
-	    }
-	  }
-	}
+            tnode* findnode = find_tid(sus_queue, head->td->wait_tids[i]);
+            if(findnode != NULL) {
+              if(findnode->td->state == STOPPED) {
+                pop_node(sus_queue, findnode);
+                findnode->td->state = CREATED;
+                if(policy == FIFO) {
+                  insert_tail(fifo_queue, findnode);
+                } else if(policy == SJF) {
+                  insert(sjf_queue, findnode);
+                }
+              }
+            }
+          }
+        }
 
-	free_tnode(head);
-	head = NULL;
+        free_tnode(head);
+        head = NULL;
       } else if (head->td->state == STOPPED) {
-	// log the file
-	gettimeofday(&t, NULL);
-	double curtime = calculate_time(t, begintime);
-	double runtime = calculate_time(t, *(head->td->start));
-	logfile(curtime, "STOPPED", head->td->tid, head->td->priority);
-	// update the current thread's run time
-	int temp = head->td->index;
-	head->td->last_thr_run[temp] = runtime;
-	head->td->index = (temp+1) % RECORD_NUM;
-	total_thrdnum ++;
-	total_runtime += runtime;
-	int recordtimes = 0;
-	double timesum = 0;
-	for(int i = 0; i < RECORD_NUM; i++) {
-	  if(head->td->last_thr_run[i] >=0) {
-	    recordtimes ++;
-	    timesum += head->td->last_thr_run[i];
-	  }
-	}
-	double new_priority = (double)timesum/(double)recordtimes;
-	head->td->priority = new_priority;
+        // log the file
+        gettimeofday(&t, NULL);
+        double curtime = calculate_time(t, begintime);
+        double runtime = calculate_time(t, *(head->td->start));
+        logfile(curtime, "STOPPED", head->td->tid, head->td->priority);
+        // update the current thread's run time
+        int temp = head->td->index;
+        head->td->last_thr_run[temp] = runtime;
+        head->td->index = (temp+1) % RECORD_NUM;
+        total_thrdnum ++;
+        total_runtime += runtime;
+        int recordtimes = 0;
+        double timesum = 0;
+        for(int i = 0; i < RECORD_NUM; i++) {
+          if(head->td->last_thr_run[i] >=0) {
+            recordtimes ++;
+            timesum += head->td->last_thr_run[i];
+          }
+        }
+        double new_priority = (double)timesum/(double)recordtimes;
+        head->td->priority = new_priority;
 
-	if(policy == FIFO) {
-	  pop_head(fifo_queue);
-	} else if(policy == SJF) {
-	  pop_head(sjf_queue);
-	}
-	head->next = NULL;
-	if(insert_sus == TRUE) {
-	  insert_tail(sus_queue, head);
-	} else {
-	  if(policy == FIFO) {
-	    insert_tail(fifo_queue, head);
-	  } else if (policy == SJF) {
-	    insert(sjf_queue, head);
-	  }
-	}
+        if(policy == FIFO) {
+          pop_head(fifo_queue);
+        } else if(policy == SJF) {
+          pop_head(sjf_queue);
+        }
+        head->next = NULL;
+        if(insert_sus == TRUE) {
+          insert_tail(sus_queue, head);
+        } else {
+          if(policy == FIFO) {
+            insert_tail(fifo_queue, head);
+          } else if (policy == SJF) {
+            insert(sjf_queue, head);
+          }
+        }
       }
       if(policy == FIFO) {
-	head = get_head(fifo_queue);
+        head = get_head(fifo_queue);
       } else if(policy == SJF) {
-	head = get_head(sjf_queue);
+        head = get_head(sjf_queue);
       }
       if(head != NULL) {
-	if(head->td->state == FINISHED) {
-	  head = head->next;
-	  if(head == NULL) {
-	    firstthread = TRUE;
-	    swapcontext(schedule, maincontext);
-	  }
-	}
-	gettimeofday(&t, NULL);
-	double curtime = calculate_time(t, begintime);
-	logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
-	gettimeofday(head->td->start, NULL);
-	swapcontext(schedule, head->td->uc);
+        if(head->td->state == FINISHED) {
+          head = head->next;
+          if(head == NULL) {
+            firstthread = TRUE;
+            swapcontext(schedule, maincontext);
+          }
+        }
+        gettimeofday(&t, NULL);
+        double curtime = calculate_time(t, begintime);
+        logfile(curtime, "SCHEDULED", head->td->tid, head->td->priority);
+        gettimeofday(head->td->start, NULL);
+        swapcontext(schedule, head->td->uc);
       } else {
-	firstthread = TRUE;
-	swapcontext(schedule, maincontext);
+        firstthread = TRUE;
+        swapcontext(schedule, maincontext);
       }
     } // end of fifo and sjf
   }
@@ -608,18 +613,18 @@ int thread_libinit(int policy)
     int temp = 1;
     while(temp <= TOTAL) {
       for(int i = 0; i < 4; i++) {
-	turns[temp-1] = temparr[i];
-	temp ++;
+        turns[temp-1] = temparr[i];
+        temp ++;
       }
       if(temp == 5) {
-	turns[temp-1] = M;
-	temp ++;
+        turns[temp-1] = M;
+        temp ++;
       } else if(temp == 10) {
-	turns[temp-1] = M;
-	temp ++;
+        turns[temp-1] = M;
+        temp ++;
       } else if(temp == 15) {
-	turns[temp-1] = H;
-	temp++;
+        turns[temp-1] = H;
+        temp++;
       }
     }
   }
@@ -682,7 +687,7 @@ int thread_create(void (*func)(void *), void *arg, int priority)
   newuc->uc_stack.ss_flags = SS_DISABLE;
   sigemptyset(&(newuc->uc_sigmask));
   makecontext(newuc, (void (*)(void))stubfunc, 2, func, arg);
-   if(newthread == NULL) {
+  if(newthread == NULL) {
     return FAIL;
   }
   tidcount++;
@@ -738,24 +743,48 @@ int thread_join(int tid) {
 
   if(head == NULL) {
     // the main thread is waiting for the thread tid
-    mainthread->state = STOPPED;
-    mainthread->wait_index = 0;
-    mainthread->wait_tids[mainthread->wait_index] = tid;
+    tnode* target;
+    if(schedule_policy == PRIORITY) {
+      target = find_priority(tid);
+    } else if(schedule_policy == SJF) {
+      target = find_tid(sjf_queue, tid);
+    } else if(schedule_policy == FIFO) {
+      target = find_tid(fifo_queue, tid);
+    }
+    if(target == NULL) {
+      target = find_tid(sus_queue, tid);
+    }
+    if(target == NULL) {
+      return FAIL;
+    } else if(target->td->state == FINISHED) {
+      return SUCCESS;
+    }
+    if(target->td->wait_index < 0) {
+      target->td->wait_index = 0;
+    }  else {
+      target->td->wait_index ++;
+    }
+    if(target->td->wait_index >= target->td->wait_size) {
+      target->td->wait_size += ARRSIZE;
+      target->td->wait_tids = realloc(target->td->wait_tids, sizeof(int) * target->td->wait_size);
+    }
+    target->td->wait_tids[target->td->wait_index] = mainthread->tid;
+    mainnode->td->state = STOPPED;
     makecontext(schedule, (void (*)(void))scheduler, 2, FIFO, FALSE);
-    swapcontext(maincontext, schedule);
+    swapcontext(mainnode->td->uc, schedule);
   } else {
     if(schedule_policy == FIFO || schedule_policy == SJF) {
       tnode* target;
       if(schedule_policy == FIFO) {
         target = find_tid(fifo_queue, tid);
-	if(target == NULL) {
-	  target = find_tid(sus_queue, tid);
-	}
+        if(target == NULL) {
+          target = find_tid(sus_queue, tid);
+        }
       } else if(schedule_policy == SJF) {
         target = find_tid(sjf_queue, tid);
-	if(target == NULL) {
-	  target = find_tid(sus_queue, tid);
-	}
+        if(target == NULL) {
+          target = find_tid(sus_queue, tid);
+        }
       }
       if(target == NULL) {
         return FAIL;
@@ -781,7 +810,7 @@ int thread_join(int tid) {
       sigprocmask(SIG_BLOCK, &blocked, NULL);
       tnode* target = find_priority(tid);
       if(target == NULL) {
-	target = find_tid(sus_queue, tid);
+        target = find_tid(sus_queue, tid);
       }
       if(target == NULL) {
         return FAIL;
