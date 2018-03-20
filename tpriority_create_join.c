@@ -7,8 +7,9 @@
 
 #define N 6
 
-void foo(int val) {
-  printf("Created and scheduled %d threads\n", val+1);
+void foo(void* val) {
+  int num = *(int*)val;
+  printf("Created and scheduled %d threads\n", num+1);
 }
 
 int main(void) {
@@ -20,15 +21,18 @@ int main(void) {
 
   int tids[N];
   memset(tids, -1, sizeof(tids));
-
+  int temp[N];
   for (int i = 0; i < 2; i++)  {
-    tids[i] = thread_create(foo, i, 0);
+    temp[i] = i;
+    tids[i] = thread_create(foo, &temp[i], 0);
   }
    for (int i = 2; i < 4; i++)  {
-    tids[i] = thread_create(foo, i, -1);
+     temp[i] = i;
+     tids[i] = thread_create(foo, &temp[i], -1);
   }
     for (int i = 4; i < 6; i++)  {
-    tids[i] = thread_create(foo, i, 1);
+      temp[i] = i;
+      tids[i] = thread_create(foo, &temp[i], 1);
   }
 
   for (int i = 0; i < N; i++)  {

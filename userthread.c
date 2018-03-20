@@ -95,7 +95,6 @@ static void sig_handler(int);
 static void add_priority(tnode*);
 static tnode* find_priority(int);
 static void get_next_run();
-static void arrange_priority(tnode*);
 static void pop_priority();
 static void reset_heads_priority();
 static void free_basics();
@@ -123,17 +122,6 @@ static void free_basics(){
   VALGRIND_STACK_DEREGISTER(schedule_id);
   free(schedule->uc_stack.ss_sp);
   free(schedule);
-}
-
-
-static void arrange_priority(tnode* n) {
-  if(n->td->priority == H) {
-    arrange_queue(first, n);
-  } else if(n->td->priority == M) {
-    arrange_queue(second, n);
-  } else if(n->td->priority == L) {
-    arrange_queue(third, n);
-  }
 }
 
 static void pop_priority() {
@@ -500,7 +488,7 @@ static void scheduler(int policy, int insert_sus) {
 
 	double new_priority = (double)timesum/(double)recordtimes;
 	head->td->priority = new_priority;
-	tnode* tempnode = head; // after update need to rearrange the order of the queue
+
 	if(policy == FIFO) {
 	  pop_head(fifo_queue);
 	} else if(policy == SJF) {
