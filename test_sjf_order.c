@@ -6,7 +6,7 @@
 #define FAIL -1
 #define SUCCESS 0
 
-void yield(char* input) {
+void yield(void* input) {
   for(int i = 0; i < 5; i ++) {
     printf("Current thread is %s %d\n", input, i);
     thread_yield();
@@ -15,13 +15,13 @@ void yield(char* input) {
 }
 
 
-void normal(int val) {
-  printf("Hello we are testing sjf order %d\n", val);   
+void normal() {
+  printf("Hello we are testing sjf order\n");   
 }
 
 int main() {
   printf("* Test for SJF thread_yield\n");
-  printf("* Should print out ten lines of 'Hello we are testing sjf order <number> ' before FINISH printing 'Current thread is yielding' message\n");
+  printf("* Should print out ten lines of 'Hello we are testing sjf order' before FINISH printing 'Current thread is yielding' message\n");
   
   if(thread_libinit(SJF) == FAIL) {
     exit(EXIT_FAILURE);
@@ -35,7 +35,7 @@ int main() {
   
   int tid = thread_create(yield, "yielding", -1);
   for(int i = 0; i < 10; i++) {
-    tids[i] = thread_create(normal, i, -1);
+    tids[i] = thread_create(normal, NULL, -1);
   }
   for(int i = 0; i < 10; i++) {
     if(tids[i] < 0) {

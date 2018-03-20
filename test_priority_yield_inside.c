@@ -1,22 +1,23 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "userthread.h"
 
 #define N 6
 
-void foo(int tid) {
+void foo(void* tid) {
 
   for(int i = 0; i < 6; i++) {
-    printf("Thread with index %d yield %d times\n", tid, i+1);
+    printf("Thread with index %d yield %d times\n", *(int*)tid, i+1);
     thread_yield();
   }
-  printf("Thread with index %d finished yielding\n", tid);
+  printf("Thread with index %d finished yielding\n", *(int*)tid);
   
 }
 
-void foo2(int tid) {
-  printf("Thread with index  %d  is running\n", tid);
+void foo2(void* tid) {
+  printf("Thread with index  %d  is running\n", *(int*)tid);
 }
 
 int main(void) {
@@ -29,19 +30,23 @@ int main(void) {
   }
   
   int tids[N];
+  int args[N];
   memset(tids, -1, sizeof(tids));
   
 
   for (int i = 0; i < 2; i++)  {
-    tids[i] = thread_create(foo2, i, 0);
+    args[i] = i;
+    tids[i] = thread_create(foo2, &args[i], 0);
   }
   
   for (int i = 2; i < 4; i++)  {
-    tids[i] = thread_create(foo, i, -1);
+    args[i] = i;
+    tids[i] = thread_create(foo, &args[i], -1);
   }
    
   for (int i = 4; i < 6; i++)  {
-    tids[i] = thread_create(foo2, i, 1);
+    args[i] = i;
+    tids[i] = thread_create(foo2, &args[i], 1);
   }
     
   for (int i = 0; i < N; i++)  {

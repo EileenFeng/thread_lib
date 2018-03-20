@@ -1,18 +1,20 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <string.h>
 #include "userthread.h"
 
 #define N 6
 
-void foo(int tid) {
-  thread_join(tid);
+void foo(void* tid) {
+  thread_join(*(int*)tid);
   for(int i = 0; i < 7; i++) {
-    printf("Joining thread %d\n", tid);
+    printf("Joining thread %d\n", *(int*)tid);
   }
 }
 
-void foo2(int tid) {
+void foo2() {
   printf("Hello Work \n");
 }
 
@@ -27,15 +29,15 @@ int main(void) {
   
 
   for (int i = 0; i < 2; i++)  {
-    tids[i] = thread_create(foo2, i, 0);
+    tids[i] = thread_create(foo2, NULL, 0);
   }
   
   for (int i = 2; i < 4; i++)  {
-    tids[i] = thread_create(foo, tids[0], -1);
+    tids[i] = thread_create(foo, &tids[0], -1);
   }
    
   for (int i = 4; i < N; i++)  {
-    tids[i] = thread_create(foo2, i, 1);
+    tids[i] = thread_create(foo2, NULL, 1);
   }
 
   printf("* Threads %d and thread  %d should not finish until the thread %d finishes\n", tids[2], tids[3], tids[0]);

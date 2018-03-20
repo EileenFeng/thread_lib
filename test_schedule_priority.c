@@ -11,7 +11,7 @@
 #define M 0
 #define L 1
 
-void foo(int p) {
+void foo(void* p) {
   for(int i = 0; i < 19; i++) {
     poll(NULL, 0, 100);
     printf("Thread with priority %d is running %d times\n", p, i+1);
@@ -28,10 +28,13 @@ int main(void) {
 
   int tids[N];
   memset(tids, -1, sizeof(tids));
-
-    tids[0] = thread_create(foo, M, M);
-    tids[1] = thread_create(foo, H, H);
-    tids[2] = thread_create(foo, L, L);
+  int h = H;
+  int m = M;
+  int l = L;
+  
+  tids[0] = thread_create(foo, &m, m);
+  tids[1] = thread_create(foo, &h, h);
+  tids[2] = thread_create(foo, &l, l);
 
   for (int i = 0; i < N; i++)  {
     if (tids[i] == -1)

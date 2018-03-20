@@ -90,43 +90,7 @@ static tnode* popnode(pqueue pq, tnode* target) {
     }
     pq->size --;
     return cur;
-    //    pq->size --;
-    //insert_node(pq, target);
   }  
-}
-
-static void arrange(pqueue pq, tnode* target) {
-  tnode* curhead = get_head(pq);
-  if(curhead->td->tid == target->td->tid) {
-    if(curhead->td->priority < curhead->next->td->priority) {
-      return;
-    }
-  }
-  tnode* pre = NULL;
-  tnode* cur = NULL;
-  tnode* nex = NULL;
-  cur = get_head(pq);
-  while(cur != NULL && cur->td->tid != target->td->tid) {
-    pre = cur;
-    cur = nex;
-    if(cur != NULL) {
-      nex = cur->next;
-    } else {
-      nex = NULL;
-    }
-  }
-  if(cur == NULL) {
-    return;
-  } else {
-    nex = cur->next;
-    if(pre != NULL) {
-      pre->next = nex;
-    } else {
-      pq->head = nex;
-    }
-    pq->size --;
-    insert_node(pq, target);
-  }
 }
 
 static void add_tail(pqueue pq, tnode* tn) {
@@ -253,6 +217,4 @@ void (*pop_head) (pqueue) = &pophead;
 void (*delete_head) (pqueue) = &deletehead;                                           
 tnode* (*find_tid) (pqueue, int) = &findtid;                                          
 void (*move_head) (pqueue, pqueue) = &movehead_finished;                              
-void (*arrange_queue) (pqueue, tnode*) = &arrange; 
-
 tnode* (*pop_node) (pqueue, tnode*) = &popnode;
