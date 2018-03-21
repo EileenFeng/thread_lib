@@ -19,6 +19,9 @@ typedef struct thrd {
   struct timeval *start;
   // needs to change to all threads waiting for me
   int* wait_tids;
+  int* waiting;  // threads that this thread is waiting for
+  int waiting_index;
+  int waiting_size;
   int wait_size;
   int wait_index;
 } thrd;

@@ -13,7 +13,7 @@ void foo(void* tid) {
     thread_yield();
   }
   printf("Thread with index %d finished yielding\n", temp+1);
-  
+
 }
 
 void foo2(void* tid) {
@@ -25,38 +25,42 @@ int main(void) {
   printf("* Test:  highest priority threads join lower priority threads\n");
   printf("* THe 3rd and 4th thread should yield 6 times\n");
   printf("* The 1st, 2nd, 5th ,and 6th threads in the 'tids' array should run and finish before the 3rd and 4th threads\n");
-  
+
   if (thread_libinit(PRIORITY) == -1){
     exit(EXIT_FAILURE);
   }
-  
+
   int tids[N];
   int args[N];
   memset(tids, -1, sizeof(tids));
-  
+
 
   for (int i = 0; i < 2; i++)  {
     args[i] = i;
     tids[i] = thread_create(foo2, &args[i], 0);
   }
-  
+
   for (int i = 2; i < 4; i++)  {
     args[i] = i;
     tids[i] = thread_create(foo, &args[i], -1);
   }
-   
+
   for (int i = 4; i < 6; i++)  {
     args[i] = i;
     tids[i] = thread_create(foo2, &args[i], 1);
   }
-    
+
   for (int i = 0; i < N; i++)  {
     if (tids[i] == -1)
       exit(EXIT_FAILURE);
   }
 
-  thread_join(2);
-  
+  for(int i = 0; i < N; i++) {
+    if(thread_join(tids[i]) == -1) {
+      exit(EXIT_FAILURE);
+    }
+  }
+
   printf("back to main context\n");
   if (thread_libterminate() == -1){
     exit(EXIT_FAILURE);

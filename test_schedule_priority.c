@@ -31,7 +31,7 @@ int main(void) {
   int h = H;
   int m = M;
   int l = L;
-  
+
   tids[0] = thread_create(foo, &m, m);
   tids[1] = thread_create(foo, &h, h);
   tids[2] = thread_create(foo, &l, l);
@@ -42,10 +42,11 @@ int main(void) {
   }
 
   for (int i = 0; i < N; i++)  {
+    printf("]]]]]]]]]]]]]]]]]joining %d\n", tids[i]);
     if (thread_join(tids[i]) == -1)
       exit(EXIT_FAILURE);
   }
-
+  printf("back to main context\n");
   if (thread_libterminate() == -1)
     exit(EXIT_FAILURE);
 

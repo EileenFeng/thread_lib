@@ -42,23 +42,24 @@ int main(void) {
     args[i] = i;
     tids[i] = thread_create(foo2, NULL, 1);
   }
-  
+
   for (int i = 0; i < N; i++)  {
     if (tids[i] == -1)
       exit(EXIT_FAILURE);
   }
 
   for (int i = 0; i < N; i++)  {
-    if (thread_join(tids[i]) == -1)
+    printf("----------- joining %d\n", tids[i]);
+    if (thread_join(tids[i]) == -1) {
+      printf("watratatat\n");
       exit(EXIT_FAILURE);
+    }
   }
 
   printf("back to main context\n");
-  
+
   if (thread_libterminate() == -1)
     exit(EXIT_FAILURE);
 
   exit(EXIT_SUCCESS);
 }
-
-

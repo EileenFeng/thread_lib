@@ -20,8 +20,11 @@ thrd* new_thrd(int tid, ucontext_t* uc) {
   td->index = 0;
   td->start = malloc(sizeof(struct timeval));
   td->wait_tids = malloc(sizeof(int) * ARRSIZE);
+  td->waiting = malloc(sizeof(int) * ARRSIZE);
+  td->waiting_index = NOTSET;
   td->wait_index = NOTSET;
   td->wait_size = ARRSIZE;
+  td->waiting_size = ARRSIZE;
   for(int i = 0; i < RECORD_NUM; i++) {
     td->last_thr_run[i] = -1;
   }
@@ -45,7 +48,7 @@ static void free_node(tnode* tn) {
   }
 
   if (tn->td->uc->uc_stack.ss_sp != NULL) {
-    VALGRIND_STACK_DEREGISTER(tn->td->valgrindid);   
+    VALGRIND_STACK_DEREGISTER(tn->td->valgrindid);
     free(tn->td->uc->uc_stack.ss_sp); // free the stack
     tn->td->uc->uc_stack.ss_sp = NULL;
   }
@@ -55,6 +58,7 @@ static void free_node(tnode* tn) {
   }
   free(tn->td->start);
   free(tn->td->wait_tids);
+  free(tn->td->waiting);
   free(tn->td);
   free(tn);
 }
