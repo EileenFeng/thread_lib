@@ -346,7 +346,6 @@ static void scheduler(int policy, int insert_sus) {
               if(find->td->state == STOPPED && ready) {
                 pop_node(sus_queue, find);
                 find->td->state = CREATED;
-                printf("--+++++++added back to queue %d   %f\n", find->td->tid, find->td->priority);
                 add_priority(find);
               }
             }
@@ -774,7 +773,6 @@ int thread_join(int tid) {
       if(target != NULL) {
         return SUCCESS;
       }
-      printf("here finding %d failed it's null", tid);
       return FAIL;
     } else if(target->td->state == FINISHED) {
       return SUCCESS;
@@ -801,7 +799,6 @@ int thread_join(int tid) {
     }
     mainnode->td->waiting[mainnode->td->waiting_index] = target->td->tid;
 
-    printf("^^^^^^^^^^^^^^In join mainthread joined %d\n", target->td->tid);
     mainnode->td->state = STOPPED;
     mainnode->td->priority = target->td->priority;
     insert_tail(sus_queue, mainnode);
@@ -855,7 +852,6 @@ int thread_join(int tid) {
       head->td->state = STOPPED;
       makecontext(schedule, (void (*)(void))scheduler, 2, schedule_policy, TRUE);
       gettimeofday(head->td->start, NULL);
-      printf("JJJJJJJJJJJoin  thread %d is joining %d\n", head->td->tid, target->td->tid);
       swapcontext(head->td->uc, schedule);
       return SUCCESS;
     } else if(schedule_policy == PRIORITY) {
@@ -867,7 +863,6 @@ int thread_join(int tid) {
       if(target == NULL) {
         target = find_tid(finish_list, tid);
         if(target == NULL) {
-          printf("here???? %d finding %d failed\n", head->td->tid, tid);
           return FAIL;
         }
         return SUCCESS;
@@ -897,7 +892,6 @@ int thread_join(int tid) {
       head->td->waiting[head->td->waiting_index] = target->td->tid;
 
       head->td->state = STOPPED;
-      printf("JJJJJJJJJJJoin  thread %d is joining %d\n", head->td->tid, target->td->tid);
       makecontext(schedule, (void (*)(void))scheduler, 2, PRIORITY, TRUE);
       swapcontext(head->td->uc, schedule);
       return SUCCESS;

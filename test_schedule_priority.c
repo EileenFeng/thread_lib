@@ -42,7 +42,6 @@ int main(void) {
   }
 
   for (int i = 0; i < N; i++)  {
-    printf("]]]]]]]]]]]]]]]]]joining %d\n", tids[i]);
     if (thread_join(tids[i]) == -1)
       exit(EXIT_FAILURE);
   }
