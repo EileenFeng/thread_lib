@@ -100,8 +100,24 @@ static void pop_priority();
 static void reset_heads_priority();
 static void free_basics();
 static int update_check_ready(tnode*, int);
+static void free_list_at_fail();
 
 /************************** FUNCTIONS *********************************/
+
+static void free_list_at_fail(){
+  if(schedule_policy == FIFO) {
+    free_queue(fifo_queue);
+  } else if(schedule_policy == SJF) {
+    free_queue(sjf_queue);
+  } else if(schedule_policy == PRIORITY) {
+    free_queue(first);
+    free_queue(second);
+    free_queue(third);
+  }
+  free_queue(sus_queue);
+  free_queue(finish_list);
+  fclose(stream);
+}
 
 static int update_check_ready(tnode* target, int tid) {
   int ready = TRUE;
@@ -132,6 +148,7 @@ static void free_basics(){
   free(maincontext);
   free(mainthread->wait_tids);
   free(mainthread->start);
+  free(mainthread->waiting);
   free(mainthread);
   free(mainnode);
   VALGRIND_STACK_DEREGISTER(schedule_id);
@@ -295,6 +312,7 @@ static void scheduler(int policy, int insert_sus) {
         }
 
       } else if (schedule_policy == PRIORITY) {
+
         // very first thread to join
         hhead = get_head(first);
         mhead = get_head(second);
@@ -364,7 +382,9 @@ static void scheduler(int policy, int insert_sus) {
         }
         if(head->td->tid != mainnode->td->tid) {
           head->next = NULL;
-          insert_tail(finish_list, head);
+          if(head->td->tid != mainthread->tid){
+            insert_tail(finish_list, head);
+          }
         }
         head = NULL;
       } else if(head->td->state == SCHEDULED){
@@ -665,14 +685,6 @@ int thread_libterminate(void)
   }
   free_queue(sus_queue);
   free_queue(finish_list);
-  //VALGRIND_STACK_DEREGISTER(mainthread->valgrindid);
-  /*free(maincontext->uc_stack.ss_sp);
-  free(maincontext);
-  free(mainthread->wait_tids);
-  free(mainthread->start);
-  free(mainthread);
-  free(mainnode);
-  */
   VALGRIND_STACK_DEREGISTER(schedule_id);
   free(schedule->uc_stack.ss_sp);
   free(schedule);
@@ -702,6 +714,14 @@ int thread_create(void (*func)(void *), void *arg, int priority)
   sigemptyset(&(newuc->uc_sigmask));
   makecontext(newuc, (void (*)(void))stubfunc, 2, func, arg);
   if(newthread == NULL) {
+    free(stack);
+    free(newuc);
+    free(newthread->wait_tids);
+    free(newthread->waiting);
+    free(newthread->start);
+    free(newthread);
+    free_basics();
+    free_list_at_fail();
     return FAIL;
   }
   tidcount++;
@@ -719,6 +739,14 @@ int thread_create(void (*func)(void *), void *arg, int priority)
     }
     newnode = new_tnode(newthread, NULL);
     if(newnode == NULL) {
+      free(stack);
+      free(newuc);
+      free(newthread->wait_tids);
+      free(newthread->waiting);
+      free(newthread->start);
+      free(newthread);
+      free_basics();
+      free_list_at_fail();
       return FAIL;
     }
     if(schedule_policy == FIFO) {
@@ -727,7 +755,17 @@ int thread_create(void (*func)(void *), void *arg, int priority)
       insert(sjf_queue, newnode);
     }
   } else if (schedule_policy == PRIORITY) {
-
+    if(priority != H && priority != M && priority != L){
+      free(stack);
+      free(newuc);
+      free(newthread->wait_tids);
+      free(newthread->waiting);
+      free(newthread->start);
+      free(newthread);
+      free_basics();
+      free_list_at_fail();
+      return FAIL;
+    }
     newthread->schedule = schedule_policy;
     newthread->state = CREATED;
     newthread->last_run = 0;
@@ -740,6 +778,15 @@ int thread_create(void (*func)(void *), void *arg, int priority)
     add_priority(newnode);
     sigprocmask(SIG_UNBLOCK, &blocked, NULL);
   } else {
+    free(stack);
+    free(newuc);
+    free(newthread->wait_tids);
+    free(newthread->waiting);
+    free(newthread->start);
+    free(newthread);
+    free(newnode);
+    free_basics();
+    free_list_at_fail();
     return FAIL;
   }
   gettimeofday(&t, NULL);
